@@ -31,7 +31,7 @@ $requested_role = isset($data['role']) ? strtoupper(trim($data['role'])) : '';
 
 // Validation: require credentials
 if (empty($identifier) || empty($password)) {
-    echo json_encode(["success" => false, "message" => "Email/ID and Password are required."]);
+    echo json_encode(["success" => false, "message" => "Student/Faculty ID or Email and Password are required."]);
     exit();
 }
 
@@ -43,7 +43,7 @@ try {
         // --- FACULTY / INSTRUCTOR LOGIN ONLY (queries instructors table) ---
         $sqlInst = "SELECT instructor_id AS user_id, faculty_id AS student_id, full_name, email, password, department, 'FACULTY' as role
                     FROM instructors
-                    WHERE email = :identifier OR faculty_id = :identifier
+                    WHERE LOWER(email) = LOWER(:identifier) OR LOWER(faculty_id) = LOWER(:identifier)
                     LIMIT 1";
 
         $stmtInst = $pdo->prepare($sqlInst);
@@ -66,12 +66,12 @@ try {
             exit();
         } else {
             // Check if account exists in student database to give clear error message
-            $checkUser = $pdo->prepare("SELECT user_id FROM users WHERE email = :identifier OR student_id = :identifier LIMIT 1");
+            $checkUser = $pdo->prepare("SELECT user_id FROM users WHERE LOWER(email) = LOWER(:identifier) OR LOWER(student_id) = LOWER(:identifier) LIMIT 1");
             $checkUser->execute([':identifier' => $identifier]);
             if ($checkUser->fetch()) {
                 echo json_encode([
                     "success" => false,
-                    "message" => "Student account detected. Please switch to the Student Portal to log in."
+                    "message" => "Student ID or Email detected. Please switch to the Student Portal to log in."
                 ]);
             } else {
                 echo json_encode([
@@ -84,9 +84,10 @@ try {
 
     } elseif ($requested_role === 'STUDENT') {
         // --- STUDENT LOGIN ONLY (queries users table) ---
+        // Validate student_id OR email (case-insensitive)
         $sqlUser = "SELECT user_id, student_id, full_name, email, password, COALESCE(role, 'STUDENT') as role
                     FROM users
-                    WHERE email = :identifier OR student_id = :identifier
+                    WHERE LOWER(email) = LOWER(:identifier) OR LOWER(student_id) = LOWER(:identifier)
                     LIMIT 1";
 
         $stmtUser = $pdo->prepare($sqlUser);
@@ -107,19 +108,29 @@ try {
             ]);
             exit();
         } else {
-            // Check if account exists in instructor database to give clear error message
-            $checkInst = $pdo->prepare("SELECT instructor_id FROM instructors WHERE email = :identifier OR faculty_id = :identifier LIMIT 1");
+            // Check if ID or email exists in instructor database
+            $checkInst = $pdo->prepare("SELECT instructor_id FROM instructors WHERE LOWER(email) = LOWER(:identifier) OR LOWER(faculty_id) = LOWER(:identifier) LIMIT 1");
             $checkInst->execute([':identifier' => $identifier]);
             if ($checkInst->fetch()) {
                 echo json_encode([
                     "success" => false,
-                    "message" => "Faculty/Instructor account detected. Please switch to the Faculty Portal to log in."
+                    "message" => "Faculty ID/email detected. Please switch to the Faculty Portal to log in."
                 ]);
             } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Invalid Student ID/email or password."
-                ]);
+                // Check if student ID/email exists in users table to provide specific validation feedback
+                $checkStudentExist = $pdo->prepare("SELECT user_id FROM users WHERE LOWER(email) = LOWER(:identifier) OR LOWER(student_id) = LOWER(:identifier) LIMIT 1");
+                $checkStudentExist->execute([':identifier' => $identifier]);
+                if ($checkStudentExist->fetch()) {
+                    echo json_encode([
+                        "success" => false,
+                        "message" => "Incorrect password for this Student account."
+                    ]);
+                } else {
+                    echo json_encode([
+                        "success" => false,
+                        "message" => "Student ID or Email not found in student records."
+                    ]);
+                }
             }
             exit();
         }
@@ -129,7 +140,7 @@ try {
         // 1. Check instructors
         $sqlInst = "SELECT instructor_id AS user_id, faculty_id AS student_id, full_name, email, password, department, 'FACULTY' as role
                     FROM instructors
-                    WHERE email = :identifier OR faculty_id = :identifier
+                    WHERE LOWER(email) = LOWER(:identifier) OR LOWER(faculty_id) = LOWER(:identifier)
                     LIMIT 1";
         $stmtInst = $pdo->prepare($sqlInst);
         $stmtInst->execute([':identifier' => $identifier]);
@@ -154,7 +165,7 @@ try {
         // 2. Check users
         $sqlUser = "SELECT user_id, student_id, full_name, email, password, COALESCE(role, 'STUDENT') as role
                     FROM users
-                    WHERE email = :identifier OR student_id = :identifier
+                    WHERE LOWER(email) = LOWER(:identifier) OR LOWER(student_id) = LOWER(:identifier)
                     LIMIT 1";
         $stmtUser = $pdo->prepare($sqlUser);
         $stmtUser->execute([':identifier' => $identifier]);
