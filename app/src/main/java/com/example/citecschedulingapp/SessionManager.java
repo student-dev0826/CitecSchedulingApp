@@ -74,23 +74,12 @@ public class SessionManager {
         return sharedPreferences.getString(KEY_ROLE, "STUDENT");
     }
 
+    /** Role comes only from the server-verified login result, never guessed from the ID or email. */
     public boolean isFaculty() {
         String role = getRole();
-        if (role != null && (role.equalsIgnoreCase("FACULTY") || role.equalsIgnoreCase("PROFESSOR"))) {
-            return true;
-        }
-
-        String studentId = getStudentId();
-        if (studentId != null && (studentId.toUpperCase().contains("PROF") || studentId.toUpperCase().contains("FACULTY") || studentId.toUpperCase().contains("EMP"))) {
-            return true;
-        }
-
-        String email = getEmail();
-        if (email != null && (email.toLowerCase().contains("prof") || email.toLowerCase().contains("faculty"))) {
-            return true;
-        }
-
-        return false;
+        return role != null && (role.equalsIgnoreCase("FACULTY")
+                || role.equalsIgnoreCase("INSTRUCTOR")
+                || role.equalsIgnoreCase("PROFESSOR"));
     }
 
     public void logout() {

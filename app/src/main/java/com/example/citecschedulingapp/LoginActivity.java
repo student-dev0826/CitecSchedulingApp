@@ -158,27 +158,25 @@ public class LoginActivity extends AppCompatActivity {
                             if (loginResponse.isSuccess()
                                     && loginResponse.getUser() != null) {
 
-                                String assignedRole = loginResponse.getUser().getRawRole();
-                                if (assignedRole == null || assignedRole.trim().isEmpty()) {
-                                    assignedRole = targetRole;
-                                }
+                                // The server only searches the table that matches the selected portal
+                                // (users for STUDENT, instructors for FACULTY) and returns the role it
+                                // found. Double-check it here so a mismatch can never open the wrong side.
+                                String assignedRole = normalizeRole(loginResponse.getUser().getRawRole());
 
-                                // Role Validation: prevent Faculty/Instructor from logging in via Student mode
-                                if (!isFacultyMode && ("FACULTY".equalsIgnoreCase(assignedRole) || "INSTRUCTOR".equalsIgnoreCase(assignedRole) || "PROFESSOR".equalsIgnoreCase(assignedRole))) {
+                                if (assignedRole == null) {
                                     Toast.makeText(
                                             LoginActivity.this,
-                                            "Faculty accounts cannot log in through Student login. Please switch to Faculty portal.",
+                                            "Unexpected server response: account type is missing.",
                                             Toast.LENGTH_LONG
                                     ).show();
                                     return;
                                 }
 
-                                if (isFacultyMode && "STUDENT".equalsIgnoreCase(assignedRole)) {
-                                    Toast.makeText(
-                                            LoginActivity.this,
-                                            "Student accounts cannot log in through Faculty login. Please switch to Student portal.",
-                                            Toast.LENGTH_LONG
-                                    ).show();
+                                if (!assignedRole.equals(targetRole)) {
+                                    String wrongPortalMsg = isFacultyMode
+                                            ? "Student accounts cannot log in through Faculty login. Please switch to Student portal."
+                                            : "Faculty accounts cannot log in through Student login. Please switch to Faculty portal.";
+                                    Toast.makeText(LoginActivity.this, wrongPortalMsg, Toast.LENGTH_LONG).show();
                                     return;
                                 }
 
@@ -229,6 +227,15 @@ public class LoginActivity extends AppCompatActivity {
                         ).show();
                     }
                 });
+    }
+
+    /** Maps server role names to exactly "STUDENT" or "FACULTY"; returns null if unknown/missing. */
+    private String normalizeRole(String role) {
+        if (role == null) return null;
+        String r = role.trim().toUpperCase();
+        if (r.equals("STUDENT")) return "STUDENT";
+        if (r.equals("FACULTY") || r.equals("INSTRUCTOR") || r.equals("PROFESSOR")) return "FACULTY";
+        return null;
     }
 
     private void navigateToNextScreen() {
