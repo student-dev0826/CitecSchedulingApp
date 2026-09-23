@@ -114,7 +114,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void attemptLogin() {
-        String email = etIdentifier.getText() != null
+        String identifier = etIdentifier.getText() != null
                 ? etIdentifier.getText().toString().trim()
                 : "";
 
@@ -123,8 +123,8 @@ public class LoginActivity extends AppCompatActivity {
                 : "";
 
         // Client-side Validation
-        if (TextUtils.isEmpty(email)) {
-            etIdentifier.setError(getString(R.string.err_email_or_id_required));
+        if (TextUtils.isEmpty(identifier)) {
+            etIdentifier.setError(isFacultyMode ? "Faculty ID or Email is required." : "Student ID or Email is required.");
             etIdentifier.requestFocus();
             return;
         }
@@ -138,10 +138,9 @@ public class LoginActivity extends AppCompatActivity {
         showLoading(true);
 
         String targetRole = isFacultyMode ? "FACULTY" : "STUDENT";
-        LoginRequest request = new LoginRequest(email, password);
 
         RetrofitClient.getApiService()
-                .loginUser(request.getEmail(), request.getPassword(), targetRole)
+                .loginUser(identifier, identifier, password, targetRole)
                 .enqueue(new Callback<LoginResponse>() {
 
                     @Override

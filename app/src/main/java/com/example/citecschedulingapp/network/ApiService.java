@@ -43,6 +43,15 @@ public interface ApiService {
     @FormUrlEncoded
     @POST("login.php")
     Call<LoginResponse> loginUser(
+            @Field("identifier") String identifier,
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("role") String role
+    );
+
+    @FormUrlEncoded
+    @POST("login.php")
+    Call<LoginResponse> loginUser(
             @Field("email") String email,
             @Field("password") String password,
             @Field("role") String role
