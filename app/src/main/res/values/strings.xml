@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">CITEC Scheduling System</string>
+    <string name="title_welcome_back">Welcome Back</string>
+    <string name="title_create_account">Create Account</string>
+    <string name="subtitle_login">Sign in to manage your appointments and schedule</string>
+    <string name="subtitle_register">Fill in your details to create a student account</string>
+
+    <string name="label_student_id">Student ID</string>
+    <string name="hint_student_id">e.g. 2026-001</string>
+    <string name="label_full_name">Full Name</string>
+    <string name="hint_full_name">e.g. Juan Dela Cruz</string>
+    <string name="label_email">Email</string>
+    <string name="hint_email">e.g. juan@gmail.com</string>
+    <string name="label_email_or_id">Email or Student ID</string>
+    <string name="hint_email_or_id">Enter your Email or Student ID</string>
+    <string name="label_password">Password</string>
+    <string name="hint_password">Enter your password</string>
+    <string name="label_confirm_password">Confirm Password</string>
+    <string name="hint_confirm_password">Re-enter your password</string>
+
+    <string name="btn_login">LOGIN</string>
+    <string name="btn_register">REGISTER</string>
+    <string name="btn_loading">Loading…</string>
+
+    <string name="link_dont_have_account">Don\'t have an account? Register</string>
+    <string name="link_already_have_account">Already have an account? Login</string>
+
+    <!-- Home screen strings -->
+    <string name="welcome_user">Welcome, %1$s</string>
+    <string name="label_student_id_format">Student ID: %1$s</string>
+    <string name="label_email_format">Email: %1$s</string>
+    <string name="btn_view_schedule">VIEW SCHEDULE</string>
+    <string name="btn_book_appointment">BOOK APPOINTMENT</string>
+    <string name="btn_my_appointments">MY APPOINTMENTS</string>
+    <string name="btn_profile">PROFILE</string>
+    <string name="btn_logout">LOGOUT</string>
+
+    <!-- Error & Validation Messages -->
+    <string name="err_student_id_required">Student ID is required.</string>
+    <string name="err_full_name_required">Full name is required.</string>
+    <string name="err_email_required">Email is required.</string>
+    <string name="err_email_invalid">Please enter a valid email address.</string>
+    <string name="err_email_or_id_required">Email or Student ID is required.</string>
+    <string name="err_password_required">Password is required.</string>
+    <string name="err_password_length">Password must be at least 8 characters.</string>
+    <string name="err_confirm_password_required">Confirm password is required.</string>
+    <string name="err_passwords_do_not_match">Passwords do not match.</string>
+    <string name="err_network_connection">Unable to connect to the server. Please check your internet connection.</string>
+</resources>
