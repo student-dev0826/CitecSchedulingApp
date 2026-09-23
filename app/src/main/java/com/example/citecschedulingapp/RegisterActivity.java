@@ -125,6 +125,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void attemptRegister() {
         String role = isFacultyMode ? "FACULTY" : "STUDENT";
+        String department = isFacultyMode && actDepartment != null ? actDepartment.getText().toString().trim() : "";
 
         String studentId = etStudentId.getText() != null ? etStudentId.getText().toString().trim() : "";
         String fullName = etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
@@ -184,7 +185,7 @@ public class RegisterActivity extends AppCompatActivity {
         showLoading(true);
 
         RetrofitClient.getApiService()
-                .registerUser(studentId, fullName, email, password, role)
+                .registerUser(studentId, fullName, email, password, role, department)
                 .enqueue(new Callback<RegisterResponse>() {
             @Override
             public void onResponse(@NonNull Call<RegisterResponse> call, @NonNull Response<RegisterResponse> response) {

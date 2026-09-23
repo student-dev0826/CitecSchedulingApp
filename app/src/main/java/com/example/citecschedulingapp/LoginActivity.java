@@ -16,6 +16,7 @@ import com.example.citecschedulingapp.model.LoginResponse;
 import com.example.citecschedulingapp.network.RetrofitClient;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -29,6 +30,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputLayout tilIdentifier;
     private TextInputEditText etIdentifier;
     private TextInputEditText etPassword;
+    private MaterialCheckBox cbRememberMe;
     private MaterialButton btnLogin;
     private ProgressBar progressBar;
     private TextView tvWelcomeTitle;
@@ -43,10 +45,13 @@ public class LoginActivity extends AppCompatActivity {
 
         sessionManager = new SessionManager(this);
 
-        // Auto-login check: route to Faculty or Student dashboard
-        if (sessionManager.isLoggedIn()) {
+        // Auto-login check: route to Faculty or Student dashboard only if "Remember Me" was checked
+        if (sessionManager.isRemembered()) {
             navigateToNextScreen();
             return;
+        } else {
+            // App starts fresh from login page when Remember Me was not checked
+            sessionManager.logout();
         }
 
         setContentView(R.layout.activity_login);
@@ -62,6 +67,7 @@ public class LoginActivity extends AppCompatActivity {
         tilIdentifier = findViewById(R.id.tilIdentifier);
         etIdentifier = findViewById(R.id.etIdentifier);
         etPassword = findViewById(R.id.etPassword);
+        cbRememberMe = findViewById(R.id.cbRememberMe);
         btnLogin = findViewById(R.id.btnLogin);
         progressBar = findViewById(R.id.progressBar);
         tvWelcomeTitle = findViewById(R.id.tvWelcomeTitle);
@@ -131,10 +137,11 @@ public class LoginActivity extends AppCompatActivity {
 
         showLoading(true);
 
+        String targetRole = isFacultyMode ? "FACULTY" : "STUDENT";
         LoginRequest request = new LoginRequest(email, password);
 
         RetrofitClient.getApiService()
-                .loginUser(request.getEmail(), request.getPassword())
+                .loginUser(request.getEmail(), request.getPassword(), targetRole)
                 .enqueue(new Callback<LoginResponse>() {
 
                     @Override
@@ -151,21 +158,36 @@ public class LoginActivity extends AppCompatActivity {
                             if (loginResponse.isSuccess()
                                     && loginResponse.getUser() != null) {
 
-                                String assignedRole = "STUDENT";
-                                String rawRole = loginResponse.getUser().getRawRole();
-
-                                if (rawRole != null && !rawRole.trim().isEmpty()) {
-                                    assignedRole = rawRole;
-                                } else if (isFacultyMode) {
-                                    assignedRole = "FACULTY";
-                                } else if ((loginResponse.getUser().getStudentId() != null && (loginResponse.getUser().getStudentId().toUpperCase().contains("PROF") || loginResponse.getUser().getStudentId().toUpperCase().contains("FACULTY") || loginResponse.getUser().getStudentId().toUpperCase().contains("EMP")))
-                                        || (loginResponse.getUser().getEmail() != null && (loginResponse.getUser().getEmail().toLowerCase().contains("prof") || loginResponse.getUser().getEmail().toLowerCase().contains("faculty")))) {
-                                    assignedRole = "FACULTY";
+                                String assignedRole = loginResponse.getUser().getRawRole();
+                                if (assignedRole == null || assignedRole.trim().isEmpty()) {
+                                    assignedRole = targetRole;
                                 }
+
+                                // Role Validation: prevent Faculty/Instructor from logging in via Student mode
+                                if (!isFacultyMode && ("FACULTY".equalsIgnoreCase(assignedRole) || "INSTRUCTOR".equalsIgnoreCase(assignedRole) || "PROFESSOR".equalsIgnoreCase(assignedRole))) {
+                                    Toast.makeText(
+                                            LoginActivity.this,
+                                            "Faculty accounts cannot log in through Student login. Please switch to Faculty portal.",
+                                            Toast.LENGTH_LONG
+                                    ).show();
+                                    return;
+                                }
+
+                                if (isFacultyMode && "STUDENT".equalsIgnoreCase(assignedRole)) {
+                                    Toast.makeText(
+                                            LoginActivity.this,
+                                            "Student accounts cannot log in through Faculty login. Please switch to Student portal.",
+                                            Toast.LENGTH_LONG
+                                    ).show();
+                                    return;
+                                }
+
+                                boolean rememberMe = cbRememberMe != null && cbRememberMe.isChecked();
 
                                 sessionManager.saveUserSession(
                                         loginResponse.getUser(),
-                                        assignedRole
+                                        assignedRole,
+                                        rememberMe
                                 );
 
                                 Toast.makeText(

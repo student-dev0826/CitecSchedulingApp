@@ -17,6 +17,17 @@ public interface ApiService {
             @Field("full_name") String fullName,
             @Field("email") String email,
             @Field("password") String password,
+            @Field("role") String role,
+            @Field("department") String department
+    );
+
+    @FormUrlEncoded
+    @POST("register.php")
+    Call<RegisterResponse> registerUser(
+            @Field("student_id") String studentId,
+            @Field("full_name") String fullName,
+            @Field("email") String email,
+            @Field("password") String password,
             @Field("role") String role
     );
 
@@ -27,6 +38,14 @@ public interface ApiService {
             @Field("full_name") String fullName,
             @Field("email") String email,
             @Field("password") String password
+    );
+
+    @FormUrlEncoded
+    @POST("login.php")
+    Call<LoginResponse> loginUser(
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("role") String role
     );
 
     @FormUrlEncoded
