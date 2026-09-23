@@ -8,14 +8,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
-import com.example.citecschedulingapp.fragment.AppointmentsFragment;
-import com.example.citecschedulingapp.fragment.BookFragment;
-import com.example.citecschedulingapp.fragment.HomeFragment;
+import com.example.citecschedulingapp.fragment.FacultyAvailabilityFragment;
+import com.example.citecschedulingapp.fragment.FacultyHomeFragment;
+import com.example.citecschedulingapp.fragment.FacultyScheduleFragment;
+import com.example.citecschedulingapp.fragment.FacultyTransferFragment;
 import com.example.citecschedulingapp.fragment.ProfileFragment;
-import com.example.citecschedulingapp.fragment.ScheduleFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-public class HomeActivity extends AppCompatActivity {
+public class FacultyHomeActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private SessionManager sessionManager;
@@ -32,22 +32,22 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        // Role check: if user is faculty/professor, redirect to FacultyHomeActivity
-        if (sessionManager.isFaculty()) {
-            startActivity(new Intent(HomeActivity.this, FacultyHomeActivity.class));
+        // Role check: if user is not faculty/professor, redirect to HomeActivity (Student portal)
+        if (!sessionManager.isFaculty()) {
+            startActivity(new Intent(FacultyHomeActivity.this, HomeActivity.class));
             finish();
             return;
         }
 
-        setContentView(R.layout.activity_home);
+        setContentView(R.layout.activity_faculty_home);
 
         bottomNavigationView = findViewById(R.id.bottomNavigation);
 
         setupBottomNavigation();
 
-        // Load default Home fragment if starting fresh
+        // Load default Faculty Home fragment if starting fresh
         if (savedInstanceState == null) {
-            loadFragment(new HomeFragment());
+            loadFragment(new FacultyHomeFragment());
         }
     }
 
@@ -56,15 +56,15 @@ public class HomeActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             Fragment fragment = null;
 
-            if (itemId == R.id.nav_home) {
-                fragment = new HomeFragment();
-            } else if (itemId == R.id.nav_schedule) {
-                fragment = new ScheduleFragment();
-            } else if (itemId == R.id.nav_book) {
-                fragment = new BookFragment();
-            } else if (itemId == R.id.nav_appointments) {
-                fragment = new AppointmentsFragment();
-            } else if (itemId == R.id.nav_profile) {
+            if (itemId == R.id.nav_faculty_home) {
+                fragment = new FacultyHomeFragment();
+            } else if (itemId == R.id.nav_faculty_schedule) {
+                fragment = new FacultyScheduleFragment();
+            } else if (itemId == R.id.nav_faculty_availability) {
+                fragment = new FacultyAvailabilityFragment();
+            } else if (itemId == R.id.nav_faculty_transfer) {
+                fragment = new FacultyTransferFragment();
+            } else if (itemId == R.id.nav_faculty_profile) {
                 fragment = new ProfileFragment();
             }
 
@@ -99,8 +99,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void navigateToLogin() {
-        Intent intent = new Intent(HomeActivity.this, LoginActivity.class);
-        // Clear Activity back stack to prevent going back to HomeActivity with Back button
+        Intent intent = new Intent(FacultyHomeActivity.this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

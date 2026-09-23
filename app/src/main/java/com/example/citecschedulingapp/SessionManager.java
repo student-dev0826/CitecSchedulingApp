@@ -13,6 +13,7 @@ public class SessionManager {
     private static final String KEY_STUDENT_ID = "studentId";
     private static final String KEY_FULL_NAME = "fullName";
     private static final String KEY_EMAIL = "email";
+    private static final String KEY_ROLE = "userRole";
 
     private final SharedPreferences sharedPreferences;
     private final SharedPreferences.Editor editor;
@@ -29,7 +30,14 @@ public class SessionManager {
         editor.putString(KEY_STUDENT_ID, user.getStudentId());
         editor.putString(KEY_FULL_NAME, user.getFullName());
         editor.putString(KEY_EMAIL, user.getEmail());
+        editor.putString(KEY_ROLE, user.getRole());
         editor.apply();
+    }
+
+    public void saveUserSession(User user, String role) {
+        if (user == null) return;
+        user.setRole(role);
+        saveUserSession(user);
     }
 
     public boolean isLoggedIn() {
@@ -50,6 +58,29 @@ public class SessionManager {
 
     public String getEmail() {
         return sharedPreferences.getString(KEY_EMAIL, "");
+    }
+
+    public String getRole() {
+        return sharedPreferences.getString(KEY_ROLE, "STUDENT");
+    }
+
+    public boolean isFaculty() {
+        String role = getRole();
+        if (role != null && (role.equalsIgnoreCase("FACULTY") || role.equalsIgnoreCase("PROFESSOR"))) {
+            return true;
+        }
+
+        String studentId = getStudentId();
+        if (studentId != null && (studentId.toUpperCase().contains("PROF") || studentId.toUpperCase().contains("FACULTY") || studentId.toUpperCase().contains("EMP"))) {
+            return true;
+        }
+
+        String email = getEmail();
+        if (email != null && (email.toLowerCase().contains("prof") || email.toLowerCase().contains("faculty"))) {
+            return true;
+        }
+
+        return false;
     }
 
     public void logout() {

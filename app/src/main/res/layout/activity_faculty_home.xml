@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_light"
-    tools:context=".HomeActivity">
+    tools:context=".FacultyHomeActivity">
 
     <!-- Fragment Display Container -->
     <FrameLayout
@@ -14,7 +14,7 @@
         android:layout_height="match_parent"
         android:layout_above="@id/bottomNavigation" />
 
-    <!-- Bottom Navigation Bar -->
+    <!-- Bottom Navigation Bar for Faculty -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
@@ -27,6 +27,6 @@
         app:itemRippleColor="@color/primary_light"
         app:itemTextColor="@color/bottom_nav_color"
         app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_menu" />
+        app:menu="@menu/faculty_bottom_nav_menu" />
 
 </RelativeLayout>

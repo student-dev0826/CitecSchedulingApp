@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_faculty_home"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_faculty_dashboard" />
+    <item
+        android:id="@+id/nav_faculty_schedule"
+        android:icon="@drawable/ic_appointments"
+        android:title="@string/nav_faculty_schedules" />
+    <item
+        android:id="@+id/nav_faculty_availability"
+        android:icon="@drawable/ic_clock_setting"
+        android:title="@string/nav_faculty_availability" />
+    <item
+        android:id="@+id/nav_faculty_transfer"
+        android:icon="@drawable/ic_swap"
+        android:title="@string/nav_faculty_transfer" />
+    <item
+        android:id="@+id/nav_faculty_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="@string/nav_profile" />
+</menu>

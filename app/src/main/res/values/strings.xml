@@ -25,7 +25,30 @@
     <string name="link_dont_have_account">Don\'t have an account? Register</string>
     <string name="link_already_have_account">Already have an account? Login</string>
 
-    <!-- Home screen strings -->
+    <!-- Home screen & Navigation strings -->
+    <string name="nav_home">Home</string>
+    <string name="nav_schedule">Schedule</string>
+    <string name="nav_book">Book</string>
+    <string name="nav_appointments">Appointments</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Faculty Navigation & Registration strings -->
+    <string name="nav_faculty_dashboard">Dashboard</string>
+    <string name="nav_faculty_schedules">Schedules</string>
+    <string name="nav_faculty_availability">Set Availability</string>
+    <string name="nav_faculty_transfer">Transfer</string>
+
+    <string name="label_account_type">Account Type / Role</string>
+    <string name="label_role_student">Student</string>
+    <string name="label_role_faculty">Faculty / Professor</string>
+    <string name="label_faculty_id">Faculty / Employee ID</string>
+    <string name="hint_faculty_id">e.g. PROF-2026-01</string>
+    <string name="label_department">Department / College</string>
+    <string name="btn_register_student">REGISTER AS STUDENT</string>
+    <string name="btn_register_faculty">REGISTER AS FACULTY</string>
+    <string name="subtitle_register_faculty">Fill in your details to create a faculty account</string>
+    <string name="label_email_or_faculty_id">Email or Faculty ID</string>
+
     <string name="welcome_user">Welcome, %1$s</string>
     <string name="label_student_id_format">Student ID: %1$s</string>
     <string name="label_email_format">Email: %1$s</string>

@@ -16,6 +16,16 @@ public interface ApiService {
             @Field("student_id") String studentId,
             @Field("full_name") String fullName,
             @Field("email") String email,
+            @Field("password") String password,
+            @Field("role") String role
+    );
+
+    @FormUrlEncoded
+    @POST("register.php")
+    Call<RegisterResponse> registerUser(
+            @Field("student_id") String studentId,
+            @Field("full_name") String fullName,
+            @Field("email") String email,
             @Field("password") String password
     );
 

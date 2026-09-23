@@ -15,7 +15,9 @@ import com.example.citecschedulingapp.model.LoginRequest;
 import com.example.citecschedulingapp.model.LoginResponse;
 import com.example.citecschedulingapp.network.RetrofitClient;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -23,13 +25,17 @@ import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private MaterialButtonToggleGroup toggleRoleGroup;
+    private TextInputLayout tilIdentifier;
     private TextInputEditText etIdentifier;
     private TextInputEditText etPassword;
     private MaterialButton btnLogin;
     private ProgressBar progressBar;
+    private TextView tvWelcomeTitle;
     private TextView tvRegisterLink;
 
     private SessionManager sessionManager;
+    private boolean isFacultyMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,25 +43,59 @@ public class LoginActivity extends AppCompatActivity {
 
         sessionManager = new SessionManager(this);
 
-        // Auto-login check: if user session exists, go directly to HomeActivity
+        // Auto-login check: route to Faculty or Student dashboard
         if (sessionManager.isLoggedIn()) {
-            startActivity(new Intent(LoginActivity.this, HomeActivity.class));
-            finish();
+            navigateToNextScreen();
             return;
         }
 
         setContentView(R.layout.activity_login);
 
         initViews();
+        setupToggleGroup();
+        checkIntentRole();
         setupListeners();
     }
 
     private void initViews() {
+        toggleRoleGroup = findViewById(R.id.toggleRoleGroup);
+        tilIdentifier = findViewById(R.id.tilIdentifier);
         etIdentifier = findViewById(R.id.etIdentifier);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
         progressBar = findViewById(R.id.progressBar);
+        tvWelcomeTitle = findViewById(R.id.tvWelcomeTitle);
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
+    }
+
+    private void setupToggleGroup() {
+        if (toggleRoleGroup != null) {
+            toggleRoleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+                if (isChecked) {
+                    setFacultyMode(checkedId == R.id.btnRoleFaculty);
+                }
+            });
+        }
+    }
+
+    private void checkIntentRole() {
+        if (getIntent() != null && getIntent().hasExtra("REGISTERED_ROLE")) {
+            String role = getIntent().getStringExtra("REGISTERED_ROLE");
+            if ("FACULTY".equalsIgnoreCase(role) && toggleRoleGroup != null) {
+                toggleRoleGroup.check(R.id.btnRoleFaculty);
+            }
+        }
+    }
+
+    private void setFacultyMode(boolean faculty) {
+        isFacultyMode = faculty;
+        if (faculty) {
+            if (tilIdentifier != null) tilIdentifier.setHint(getString(R.string.label_email_or_faculty_id));
+            if (tvWelcomeTitle != null) tvWelcomeTitle.setText("Faculty Portal Login");
+        } else {
+            if (tilIdentifier != null) tilIdentifier.setHint(getString(R.string.label_email_or_id));
+            if (tvWelcomeTitle != null) tvWelcomeTitle.setText(R.string.title_welcome_back);
+        }
     }
 
     private void setupListeners() {
@@ -111,8 +151,21 @@ public class LoginActivity extends AppCompatActivity {
                             if (loginResponse.isSuccess()
                                     && loginResponse.getUser() != null) {
 
+                                String assignedRole = "STUDENT";
+                                String rawRole = loginResponse.getUser().getRawRole();
+
+                                if (rawRole != null && !rawRole.trim().isEmpty()) {
+                                    assignedRole = rawRole;
+                                } else if (isFacultyMode) {
+                                    assignedRole = "FACULTY";
+                                } else if ((loginResponse.getUser().getStudentId() != null && (loginResponse.getUser().getStudentId().toUpperCase().contains("PROF") || loginResponse.getUser().getStudentId().toUpperCase().contains("FACULTY") || loginResponse.getUser().getStudentId().toUpperCase().contains("EMP")))
+                                        || (loginResponse.getUser().getEmail() != null && (loginResponse.getUser().getEmail().toLowerCase().contains("prof") || loginResponse.getUser().getEmail().toLowerCase().contains("faculty")))) {
+                                    assignedRole = "FACULTY";
+                                }
+
                                 sessionManager.saveUserSession(
-                                        loginResponse.getUser()
+                                        loginResponse.getUser(),
+                                        assignedRole
                                 );
 
                                 Toast.makeText(
@@ -121,13 +174,7 @@ public class LoginActivity extends AppCompatActivity {
                                         Toast.LENGTH_SHORT
                                 ).show();
 
-                                Intent intent = new Intent(
-                                        LoginActivity.this,
-                                        HomeActivity.class
-                                );
-
-                                startActivity(intent);
-                                finish();
+                                navigateToNextScreen();
 
                             } else {
                                 Toast.makeText(
@@ -161,6 +208,18 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
+
+    private void navigateToNextScreen() {
+        Intent intent;
+        if (sessionManager.isFaculty()) {
+            intent = new Intent(LoginActivity.this, FacultyHomeActivity.class);
+        } else {
+            intent = new Intent(LoginActivity.this, HomeActivity.class);
+        }
+        startActivity(intent);
+        finish();
+    }
+
     private void showLoading(boolean isLoading) {
         if (isLoading) {
             progressBar.setVisibility(View.VISIBLE);

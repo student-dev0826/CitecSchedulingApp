@@ -15,6 +15,9 @@ public class User {
     @SerializedName("email")
     private String email;
 
+    @SerializedName("role")
+    private String role;
+
     public User() {
     }
 
@@ -23,6 +26,15 @@ public class User {
         this.studentId = studentId;
         this.fullName = fullName;
         this.email = email;
+        this.role = "STUDENT";
+    }
+
+    public User(int userId, String studentId, String fullName, String email, String role) {
+        this.userId = userId;
+        this.studentId = studentId;
+        this.fullName = fullName;
+        this.email = email;
+        this.role = role;
     }
 
     public int getUserId() {
@@ -55,5 +67,17 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getRawRole() {
+        return role;
+    }
+
+    public String getRole() {
+        return role != null ? role : "STUDENT";
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

@@ -31,9 +31,14 @@
             android:name=".RegisterActivity"
             android:exported="false" />
 
-        <!-- Home Activity -->
+        <!-- Home Activity (Student) -->
         <activity
             android:name=".HomeActivity"
+            android:exported="false" />
+
+        <!-- Faculty Home Activity (Professor/Faculty Interface) -->
+        <activity
+            android:name=".FacultyHomeActivity"
             android:exported="false" />
 
     </application>
