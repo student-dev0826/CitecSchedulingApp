@@ -140,6 +140,14 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        if (isFacultyMode && TextUtils.isEmpty(department)) {
+            if (tilDepartment != null) tilDepartment.setError("Department is required.");
+            if (actDepartment != null) actDepartment.requestFocus();
+            return;
+        } else if (tilDepartment != null) {
+            tilDepartment.setError(null);
+        }
+
         if (TextUtils.isEmpty(fullName)) {
             etFullName.setError(getString(R.string.err_full_name_required));
             etFullName.requestFocus();
@@ -187,49 +195,49 @@ public class RegisterActivity extends AppCompatActivity {
         RetrofitClient.getApiService()
                 .registerUser(studentId, fullName, email, password, role, department)
                 .enqueue(new Callback<RegisterResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<RegisterResponse> call, @NonNull Response<RegisterResponse> response) {
-                showLoading(false);
+                    @Override
+                    public void onResponse(@NonNull Call<RegisterResponse> call, @NonNull Response<RegisterResponse> response) {
+                        showLoading(false);
 
-                if (response.isSuccessful() && response.body() != null) {
-                    RegisterResponse registerResponse = response.body();
+                        if (response.isSuccessful() && response.body() != null) {
+                            RegisterResponse registerResponse = response.body();
 
-                    if (registerResponse.isSuccess()) {
-                        Toast.makeText(RegisterActivity.this, registerResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                            if (registerResponse.isSuccess()) {
+                                Toast.makeText(RegisterActivity.this, registerResponse.getMessage(), Toast.LENGTH_SHORT).show();
 
-                        // Navigate to LoginActivity
-                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                        intent.putExtra("REGISTERED_ROLE", role);
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        Toast.makeText(RegisterActivity.this, registerResponse.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                } else {
-                    String serverErrMsg = "Server error: HTTP " + response.code();
+                                // Navigate to LoginActivity
+                                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                                intent.putExtra("REGISTERED_ROLE", role);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                Toast.makeText(RegisterActivity.this, registerResponse.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            String serverErrMsg = "Server error: HTTP " + response.code();
 
-                    try {
-                        if (response.errorBody() != null) {
-                            serverErrMsg += "\n" + response.errorBody().string();
+                            try {
+                                if (response.errorBody() != null) {
+                                    serverErrMsg += "\n" + response.errorBody().string();
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            Toast.makeText(
+                                    RegisterActivity.this,
+                                    serverErrMsg,
+                                    Toast.LENGTH_LONG
+                            ).show();
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
 
-                    Toast.makeText(
-                            RegisterActivity.this,
-                            serverErrMsg,
-                            Toast.LENGTH_LONG
-                    ).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<RegisterResponse> call, @NonNull Throwable t) {
-                showLoading(false);
-                Toast.makeText(RegisterActivity.this, getString(R.string.err_network_connection), Toast.LENGTH_LONG).show();
-            }
-        });
+                    @Override
+                    public void onFailure(@NonNull Call<RegisterResponse> call, @NonNull Throwable t) {
+                        showLoading(false);
+                        Toast.makeText(RegisterActivity.this, getString(R.string.err_network_connection), Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     private void showLoading(boolean isLoading) {
