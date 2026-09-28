@@ -9,6 +9,12 @@ public class User {
     @SerializedName("student_id")
     private String studentId;
 
+    @SerializedName("first_name")
+    private String firstName;
+
+    @SerializedName("last_name")
+    private String lastName;
+
     @SerializedName("full_name")
     private String fullName;
 
@@ -21,18 +27,22 @@ public class User {
     public User() {
     }
 
-    public User(int userId, String studentId, String fullName, String email) {
+    public User(int userId, String studentId, String firstName, String lastName, String email) {
         this.userId = userId;
         this.studentId = studentId;
-        this.fullName = fullName;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.fullName = (firstName + " " + lastName).trim();
         this.email = email;
         this.role = "STUDENT";
     }
 
-    public User(int userId, String studentId, String fullName, String email, String role) {
+    public User(int userId, String studentId, String firstName, String lastName, String email, String role) {
         this.userId = userId;
         this.studentId = studentId;
-        this.fullName = fullName;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.fullName = (firstName + " " + lastName).trim();
         this.email = email;
         this.role = role;
     }
@@ -53,8 +63,28 @@ public class User {
         this.studentId = studentId;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
     public String getFullName() {
-        return fullName;
+        if (fullName != null && !fullName.trim().isEmpty()) {
+            return fullName;
+        }
+        String constructed = ((firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "")).trim();
+        return !constructed.isEmpty() ? constructed : "User";
     }
 
     public void setFullName(String fullName) {

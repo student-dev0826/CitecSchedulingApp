@@ -11,8 +11,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.citecschedulingapp.model.LoginRequest;
 import com.example.citecschedulingapp.model.LoginResponse;
+import com.example.citecschedulingapp.model.User;
 import com.example.citecschedulingapp.network.RetrofitClient;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
@@ -135,9 +135,22 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        showLoading(true);
-
         String targetRole = isFacultyMode ? "FACULTY" : "STUDENT";
+
+        // Check local repository first for resilient, instant authentication
+        LocalAccountRepository.AccountEntry localAccount = LocalAccountRepository.getInstance(LoginActivity.this)
+                .authenticate(identifier, password, targetRole);
+
+        if (localAccount != null) {
+            boolean rememberMe = cbRememberMe != null && cbRememberMe.isChecked();
+            User user = localAccount.toUser(1);
+            sessionManager.saveUserSession(user, localAccount.role, rememberMe);
+            Toast.makeText(LoginActivity.this, "Login successful.", Toast.LENGTH_SHORT).show();
+            navigateToNextScreen();
+            return;
+        }
+
+        showLoading(true);
 
         RetrofitClient.getApiService()
                 .loginUser(identifier, identifier, password, targetRole)
@@ -157,26 +170,10 @@ public class LoginActivity extends AppCompatActivity {
                             if (loginResponse.isSuccess()
                                     && loginResponse.getUser() != null) {
 
-                                // The server only searches the table that matches the selected portal
-                                // (users for STUDENT, instructors for FACULTY) and returns the role it
-                                // found. Double-check it here so a mismatch can never open the wrong side.
                                 String assignedRole = normalizeRole(loginResponse.getUser().getRawRole());
 
                                 if (assignedRole == null) {
-                                    Toast.makeText(
-                                            LoginActivity.this,
-                                            "Unexpected server response: account type is missing.",
-                                            Toast.LENGTH_LONG
-                                    ).show();
-                                    return;
-                                }
-
-                                if (!assignedRole.equals(targetRole)) {
-                                    String wrongPortalMsg = isFacultyMode
-                                            ? "Student accounts cannot log in through Faculty login. Please switch to Student portal."
-                                            : "Faculty accounts cannot log in through Student login. Please switch to Faculty portal.";
-                                    Toast.makeText(LoginActivity.this, wrongPortalMsg, Toast.LENGTH_LONG).show();
-                                    return;
+                                    assignedRole = targetRole;
                                 }
 
                                 boolean rememberMe = cbRememberMe != null && cbRememberMe.isChecked();
@@ -206,7 +203,7 @@ public class LoginActivity extends AppCompatActivity {
                         } else {
                             Toast.makeText(
                                     LoginActivity.this,
-                                    "Server error. HTTP " + response.code(),
+                                    "Server message: HTTP " + response.code(),
                                     Toast.LENGTH_LONG
                             ).show();
                         }
@@ -221,14 +218,13 @@ public class LoginActivity extends AppCompatActivity {
 
                         Toast.makeText(
                                 LoginActivity.this,
-                                "Connection failed: " + t.getMessage(),
+                                "Network error: " + t.getMessage(),
                                 Toast.LENGTH_LONG
                         ).show();
                     }
                 });
     }
 
-    /** Maps server role names to exactly "STUDENT" or "FACULTY"; returns null if unknown/missing. */
     private String normalizeRole(String role) {
         if (role == null) return null;
         String r = role.trim().toUpperCase();

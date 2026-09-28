@@ -14,6 +14,8 @@ public interface ApiService {
     @POST("register.php")
     Call<RegisterResponse> registerUser(
             @Field("student_id") String studentId,
+            @Field("first_name") String firstName,
+            @Field("last_name") String lastName,
             @Field("full_name") String fullName,
             @Field("email") String email,
             @Field("password") String password,
@@ -25,10 +27,23 @@ public interface ApiService {
     @POST("register.php")
     Call<RegisterResponse> registerUser(
             @Field("student_id") String studentId,
+            @Field("first_name") String firstName,
+            @Field("last_name") String lastName,
             @Field("full_name") String fullName,
             @Field("email") String email,
             @Field("password") String password,
             @Field("role") String role
+    );
+
+    @FormUrlEncoded
+    @POST("register.php")
+    Call<RegisterResponse> registerUser(
+            @Field("student_id") String studentId,
+            @Field("full_name") String fullName,
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("role") String role,
+            @Field("department") String department
     );
 
     @FormUrlEncoded

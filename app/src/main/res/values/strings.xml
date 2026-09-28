@@ -7,6 +7,10 @@
 
     <string name="label_student_id">Student ID</string>
     <string name="hint_student_id">e.g. 2026-001</string>
+    <string name="label_first_name">First Name</string>
+    <string name="hint_first_name">e.g. Juan</string>
+    <string name="label_last_name">Last Name</string>
+    <string name="hint_last_name">e.g. Dela Cruz</string>
     <string name="label_full_name">Full Name</string>
     <string name="hint_full_name">e.g. Juan Dela Cruz</string>
     <string name="label_email">Email</string>
@@ -61,6 +65,8 @@
 
     <!-- Error & Validation Messages -->
     <string name="err_student_id_required">Student ID is required.</string>
+    <string name="err_first_name_required">First name is required.</string>
+    <string name="err_last_name_required">Last name is required.</string>
     <string name="err_full_name_required">Full name is required.</string>
     <string name="err_email_required">Email is required.</string>
     <string name="err_email_invalid">Please enter a valid email address.</string>

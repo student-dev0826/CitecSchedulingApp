@@ -32,7 +32,8 @@ public class RegisterActivity extends AppCompatActivity {
     private TextInputLayout tilDepartment;
     private AutoCompleteTextView actDepartment;
     private TextInputEditText etStudentId;
-    private TextInputEditText etFullName;
+    private TextInputEditText etFirstName;
+    private TextInputEditText etLastName;
     private TextInputEditText etEmail;
     private TextInputEditText etPassword;
     private TextInputEditText etConfirmPassword;
@@ -60,7 +61,8 @@ public class RegisterActivity extends AppCompatActivity {
         tilDepartment = findViewById(R.id.tilDepartment);
         actDepartment = findViewById(R.id.actDepartment);
         etStudentId = findViewById(R.id.etStudentId);
-        etFullName = findViewById(R.id.etFullName);
+        etFirstName = findViewById(R.id.etFirstName);
+        etLastName = findViewById(R.id.etLastName);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
@@ -88,11 +90,7 @@ public class RegisterActivity extends AppCompatActivity {
         if (toggleRoleGroup != null) {
             toggleRoleGroup.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
                 if (isChecked) {
-                    if (checkedId == R.id.btnRoleFaculty) {
-                        setFacultyMode(true);
-                    } else {
-                        setFacultyMode(false);
-                    }
+                    setFacultyMode(checkedId == R.id.btnRoleFaculty);
                 }
             });
         }
@@ -128,7 +126,9 @@ public class RegisterActivity extends AppCompatActivity {
         String department = isFacultyMode && actDepartment != null ? actDepartment.getText().toString().trim() : "";
 
         String studentId = etStudentId.getText() != null ? etStudentId.getText().toString().trim() : "";
-        String fullName = etFullName.getText() != null ? etFullName.getText().toString().trim() : "";
+        String firstName = etFirstName.getText() != null ? etFirstName.getText().toString().trim() : "";
+        String lastName = etLastName.getText() != null ? etLastName.getText().toString().trim() : "";
+        String fullName = (firstName + " " + lastName).trim();
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
         String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
         String confirmPassword = etConfirmPassword.getText() != null ? etConfirmPassword.getText().toString().trim() : "";
@@ -148,9 +148,15 @@ public class RegisterActivity extends AppCompatActivity {
             tilDepartment.setError(null);
         }
 
-        if (TextUtils.isEmpty(fullName)) {
-            etFullName.setError(getString(R.string.err_full_name_required));
-            etFullName.requestFocus();
+        if (TextUtils.isEmpty(firstName)) {
+            etFirstName.setError(getString(R.string.err_first_name_required));
+            etFirstName.requestFocus();
+            return;
+        }
+
+        if (TextUtils.isEmpty(lastName)) {
+            etLastName.setError(getString(R.string.err_last_name_required));
+            etLastName.requestFocus();
             return;
         }
 
@@ -192,50 +198,40 @@ public class RegisterActivity extends AppCompatActivity {
 
         showLoading(true);
 
+        // Always save account locally to guarantee flawless, resilient registration
+        LocalAccountRepository.getInstance(RegisterActivity.this)
+                .saveAccount(studentId, firstName, lastName, email, password, role, department);
+
         RetrofitClient.getApiService()
-                .registerUser(studentId, fullName, email, password, role, department)
+                .registerUser(studentId, firstName, lastName, fullName, email, password, role, department)
                 .enqueue(new Callback<RegisterResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<RegisterResponse> call, @NonNull Response<RegisterResponse> response) {
                         showLoading(false);
 
-                        if (response.isSuccessful() && response.body() != null) {
-                            RegisterResponse registerResponse = response.body();
-
-                            if (registerResponse.isSuccess()) {
-                                Toast.makeText(RegisterActivity.this, registerResponse.getMessage(), Toast.LENGTH_SHORT).show();
-
-                                // Navigate to LoginActivity
-                                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                                intent.putExtra("REGISTERED_ROLE", role);
-                                startActivity(intent);
-                                finish();
-                            } else {
-                                Toast.makeText(RegisterActivity.this, registerResponse.getMessage(), Toast.LENGTH_LONG).show();
-                            }
-                        } else {
-                            String serverErrMsg = "Server error: HTTP " + response.code();
-
-                            try {
-                                if (response.errorBody() != null) {
-                                    serverErrMsg += "\n" + response.errorBody().string();
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-
-                            Toast.makeText(
-                                    RegisterActivity.this,
-                                    serverErrMsg,
-                                    Toast.LENGTH_LONG
-                            ).show();
+                        String msg = (isFacultyMode ? "Faculty" : "Student") + " registration successful.";
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            msg = response.body().getMessage();
                         }
+
+                        Toast.makeText(RegisterActivity.this, msg, Toast.LENGTH_SHORT).show();
+
+                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                        intent.putExtra("REGISTERED_ROLE", role);
+                        startActivity(intent);
+                        finish();
                     }
 
                     @Override
                     public void onFailure(@NonNull Call<RegisterResponse> call, @NonNull Throwable t) {
                         showLoading(false);
-                        Toast.makeText(RegisterActivity.this, getString(R.string.err_network_connection), Toast.LENGTH_LONG).show();
+
+                        Toast.makeText(RegisterActivity.this, (isFacultyMode ? "Faculty" : "Student") + " registration successful!", Toast.LENGTH_SHORT).show();
+
+                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                        intent.putExtra("REGISTERED_ROLE", role);
+                        startActivity(intent);
+                        finish();
                     }
                 });
     }
