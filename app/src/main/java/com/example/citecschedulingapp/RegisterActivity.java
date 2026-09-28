@@ -198,10 +198,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         showLoading(true);
 
-        // Always save account locally to guarantee flawless, resilient registration
-        LocalAccountRepository.getInstance(RegisterActivity.this)
-                .saveAccount(studentId, firstName, lastName, email, password, role, department);
-
         RetrofitClient.getApiService()
                 .registerUser(studentId, firstName, lastName, fullName, email, password, role, department)
                 .enqueue(new Callback<RegisterResponse>() {
@@ -209,29 +205,25 @@ public class RegisterActivity extends AppCompatActivity {
                     public void onResponse(@NonNull Call<RegisterResponse> call, @NonNull Response<RegisterResponse> response) {
                         showLoading(false);
 
-                        String msg = (isFacultyMode ? "Faculty" : "Student") + " registration successful.";
                         if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
-                            msg = response.body().getMessage();
+                            Toast.makeText(RegisterActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                            intent.putExtra("REGISTERED_ROLE", role);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            // Show the REAL reason (duplicate ID/email, server error, ...) and stay on this screen.
+                            String msg = (response.isSuccessful() && response.body() != null)
+                                    ? response.body().getMessage()
+                                    : "Registration failed (HTTP " + response.code() + "). Check the server log.";
+                            Toast.makeText(RegisterActivity.this, msg, Toast.LENGTH_LONG).show();
                         }
-
-                        Toast.makeText(RegisterActivity.this, msg, Toast.LENGTH_SHORT).show();
-
-                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                        intent.putExtra("REGISTERED_ROLE", role);
-                        startActivity(intent);
-                        finish();
                     }
 
                     @Override
                     public void onFailure(@NonNull Call<RegisterResponse> call, @NonNull Throwable t) {
                         showLoading(false);
-
-                        Toast.makeText(RegisterActivity.this, (isFacultyMode ? "Faculty" : "Student") + " registration successful!", Toast.LENGTH_SHORT).show();
-
-                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                        intent.putExtra("REGISTERED_ROLE", role);
-                        startActivity(intent);
-                        finish();
+                        Toast.makeText(RegisterActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }

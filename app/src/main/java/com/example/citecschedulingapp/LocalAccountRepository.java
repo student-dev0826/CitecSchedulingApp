@@ -101,4 +101,19 @@ public class LocalAccountRepository {
         }
         return null;
     }
+
+    /** Keeps the offline copy of the account in sync after a successful password reset. */
+    public void updatePassword(String email, String newPassword) {
+        List<AccountEntry> list = getAccounts();
+        boolean changed = false;
+        for (AccountEntry entry : list) {
+            if (entry.email != null && entry.email.equalsIgnoreCase(email)) {
+                entry.password = newPassword;
+                changed = true;
+            }
+        }
+        if (changed) {
+            sharedPreferences.edit().putString(KEY_ACCOUNT_LIST, gson.toJson(list)).apply();
+        }
+    }
 }

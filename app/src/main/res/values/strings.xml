@@ -63,6 +63,28 @@
     <string name="btn_profile">PROFILE</string>
     <string name="btn_logout">LOGOUT</string>
 
+    <!-- Forgot Password Strings -->
+    <string name="link_forgot_password">Forgot Password?</string>
+    <string name="title_forgot_password">Forgot Password?</string>
+    <string name="subtitle_forgot_email">Enter your email address to receive a 6-digit verification code</string>
+    <string name="title_verify_code">Enter Verification Code</string>
+    <string name="msg_code_sent_to">We sent a 6-digit verification code to %1$s</string>
+    <string name="title_new_password">Create New Password</string>
+    <string name="subtitle_new_password">Set a new password for your account</string>
+    <string name="label_verification_code">6-Digit Code</string>
+    <string name="label_new_password">New Password</string>
+    <string name="label_confirm_new_password">Confirm New Password</string>
+    <string name="btn_send_code">SEND CODE</string>
+    <string name="btn_verify_code">VERIFY CODE</string>
+    <string name="btn_reset_password">RESET PASSWORD</string>
+    <string name="link_resend_code">Resend Code</string>
+    <string name="link_resend_code_wait">Resend code in %1$ds</string>
+    <string name="link_change_email">Change Email</string>
+    <string name="link_back_to_login">Back to Login</string>
+    <string name="err_code_required">Verification code is required.</string>
+    <string name="err_code_length">Verification code must be 6 digits.</string>
+    <string name="msg_password_reset_success">Password reset successful! Please log in with your new password.</string>
+
     <!-- Error & Validation Messages -->
     <string name="err_student_id_required">Student ID is required.</string>
     <string name="err_first_name_required">First name is required.</string>
@@ -76,4 +98,5 @@
     <string name="err_confirm_password_required">Confirm password is required.</string>
     <string name="err_passwords_do_not_match">Passwords do not match.</string>
     <string name="err_network_connection">Unable to connect to the server. Please check your internet connection.</string>
+
 </resources>
