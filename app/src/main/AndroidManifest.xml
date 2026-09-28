@@ -5,6 +5,9 @@
     <!-- Internet Permission required for REST API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Lets the app open the installer for its own in-app updates -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -31,6 +34,11 @@
             android:name=".RegisterActivity"
             android:exported="false" />
 
+        <!-- Forgot Password Activity -->
+        <activity
+            android:name=".ForgotPasswordActivity"
+            android:exported="false" />
+
         <!-- Home Activity (Student) -->
         <activity
             android:name=".HomeActivity"
@@ -40,6 +48,17 @@
         <activity
             android:name=".FacultyHomeActivity"
             android:exported="false" />
+
+        <!-- Shares the downloaded update APK with the system installer -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

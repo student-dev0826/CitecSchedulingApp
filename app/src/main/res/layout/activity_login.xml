@@ -152,6 +152,22 @@
                         android:textColorHint="@color/text_secondary" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Forgot Password Link -->
+                <TextView
+                    android:id="@+id/tvForgotPassword"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:text="@string/link_forgot_password"
+                    android:textColor="@color/accent"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+
                 <!-- Remember Me CheckBox -->
                 <com.google.android.material.checkbox.MaterialCheckBox
                     android:id="@+id/cbRememberMe"

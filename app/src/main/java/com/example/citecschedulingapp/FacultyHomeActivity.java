@@ -23,6 +23,7 @@ public class FacultyHomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UpdateChecker.check(this);
 
         sessionManager = new SessionManager(this);
 

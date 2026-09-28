@@ -2,6 +2,7 @@ package com.example.citecschedulingapp.network;
 
 import com.example.citecschedulingapp.model.LoginResponse;
 import com.example.citecschedulingapp.model.RegisterResponse;
+import com.example.citecschedulingapp.model.ForgotPasswordResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Field;
@@ -77,5 +78,28 @@ public interface ApiService {
     Call<LoginResponse> loginUser(
             @Field("email") String email,
             @Field("password") String password
+    );
+    // ---- Forgot password / reset ----
+
+    @FormUrlEncoded
+    @POST("forgot_password.php")
+    Call<ForgotPasswordResponse> forgotPassword(
+            @Field("email") String email
+    );
+
+    @FormUrlEncoded
+    @POST("verify_reset_code.php")
+    Call<ForgotPasswordResponse> verifyResetCode(
+            @Field("email") String email,
+            @Field("code") String code
+    );
+
+    @FormUrlEncoded
+    @POST("reset_password.php")
+    Call<ForgotPasswordResponse> resetPassword(
+            @Field("email") String email,
+            @Field("reset_token") String resetToken,
+            @Field("new_password") String newPassword,
+            @Field("confirm_password") String confirmPassword
     );
 }

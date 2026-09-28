@@ -35,13 +35,14 @@ public class LoginActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView tvWelcomeTitle;
     private TextView tvRegisterLink;
-
+    private TextView tvForgotPassword;
     private SessionManager sessionManager;
     private boolean isFacultyMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UpdateChecker.check(this);
 
         sessionManager = new SessionManager(this);
 
@@ -72,6 +73,7 @@ public class LoginActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         tvWelcomeTitle = findViewById(R.id.tvWelcomeTitle);
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
     }
 
     private void setupToggleGroup() {
@@ -111,7 +113,16 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
         });
+        tvForgotPassword.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
+            String typed = etIdentifier.getText() != null ? etIdentifier.getText().toString().trim() : "";
+            if (typed.contains("@")) {
+                intent.putExtra(ForgotPasswordActivity.EXTRA_EMAIL, typed);
+            }
+            startActivity(intent);
+        });
     }
+
 
     private void attemptLogin() {
         String identifier = etIdentifier.getText() != null
@@ -136,19 +147,6 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         String targetRole = isFacultyMode ? "FACULTY" : "STUDENT";
-
-        // Check local repository first for resilient, instant authentication
-        LocalAccountRepository.AccountEntry localAccount = LocalAccountRepository.getInstance(LoginActivity.this)
-                .authenticate(identifier, password, targetRole);
-
-        if (localAccount != null) {
-            boolean rememberMe = cbRememberMe != null && cbRememberMe.isChecked();
-            User user = localAccount.toUser(1);
-            sessionManager.saveUserSession(user, localAccount.role, rememberMe);
-            Toast.makeText(LoginActivity.this, "Login successful.", Toast.LENGTH_SHORT).show();
-            navigateToNextScreen();
-            return;
-        }
 
         showLoading(true);
 
@@ -216,6 +214,15 @@ public class LoginActivity extends AppCompatActivity {
 
                         showLoading(false);
 
+                        // Offline fallback only: no server reachable, try the on-device copy.
+                        LocalAccountRepository.AccountEntry local = LocalAccountRepository
+                                .getInstance(LoginActivity.this).authenticate(identifier, password, targetRole);
+                        if (local != null) {
+                            boolean rememberMe = cbRememberMe != null && cbRememberMe.isChecked();
+                            sessionManager.saveUserSession(local.toUser(1), local.role, rememberMe);
+                            navigateToNextScreen();
+                            return;
+                        }
                         Toast.makeText(
                                 LoginActivity.this,
                                 "Network error: " + t.getMessage(),
