@@ -41,6 +41,22 @@
                     android:text="Faculty &amp; Professor Portal"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvLiveDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/primary_dark"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvLiveTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <ImageView
@@ -54,6 +70,20 @@
                 android:padding="8dp"
                 android:src="@drawable/ic_notifications"
                 app:tint="@color/primary" />
+            <TextView
+                android:id="@+id/tvNotifBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@id/ivNotification"
+                android:layout_alignEnd="@id/ivNotification"
+                android:background="#DC2626"
+                android:gravity="center"
+                android:minWidth="16dp"
+                android:paddingHorizontal="4dp"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </RelativeLayout>
 
         <!-- Faculty Welcome Card -->
@@ -155,7 +185,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="4"
+                        android:id="@+id/tvStatToday"
+                        android:text="0"
                         android:textColor="@color/primary"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -191,7 +222,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="2"
+                        android:id="@+id/tvStatOpen"
+                        android:text="0"
                         android:textColor="#D97706"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -200,7 +232,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Pending Requests"
+                        android:text="Open Slots"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -227,7 +259,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="12"
+                        android:id="@+id/tvStatCompleted"
+                        android:text="0"
                         android:textColor="#16A34A"
                         android:textSize="22sp"
                         android:textStyle="bold" />

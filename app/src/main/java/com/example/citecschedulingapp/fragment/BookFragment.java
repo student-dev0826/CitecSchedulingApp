@@ -19,21 +19,26 @@ import com.example.citecschedulingapp.ScheduleRepository;
 import com.example.citecschedulingapp.SessionManager;
 import com.example.citecschedulingapp.model.PostedSchedule;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BookFragment extends Fragment {
 
     private AutoCompleteTextView actSelectProfessor;
     private AutoCompleteTextView actAvailableSlot;
+    private TextInputEditText etBookingReason;
     private MaterialButton btnSubmitBooking;
 
-    private ScheduleRepository scheduleRepository;
+    private ScheduleRepository repository;
     private SessionManager sessionManager;
 
-    private List<PostedSchedule> currentSelectedProfSchedules = new ArrayList<>();
-    private PostedSchedule selectedScheduleSlot = null;
+    private final Map<String, List<PostedSchedule>> slotsByProfessor = new LinkedHashMap<>();
+    private List<PostedSchedule> currentSlots = new ArrayList<>();
+    private PostedSchedule selectedSlot = null;
 
     @Nullable
     @Override
@@ -45,112 +50,144 @@ public class BookFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (getContext() != null) {
-            scheduleRepository = ScheduleRepository.getInstance(getContext());
-            sessionManager = new SessionManager(getContext());
-        }
+        repository = ScheduleRepository.getInstance(requireContext());
+        sessionManager = new SessionManager(requireContext());
 
         actSelectProfessor = view.findViewById(R.id.actSelectProfessor);
         actAvailableSlot = view.findViewById(R.id.actAvailableSlot);
+        etBookingReason = view.findViewById(R.id.etBookingReason);
         btnSubmitBooking = view.findViewById(R.id.btnSubmitBooking);
 
-        setupDropdowns();
-        setupListeners();
+        btnSubmitBooking.setOnClickListener(v -> attemptBooking());
+        loadSlots();
     }
 
-    private void setupDropdowns() {
-        if (getContext() == null || scheduleRepository == null) return;
+    /** Pulls the latest open slots from the server. */
+    private void loadSlots() {
+        btnSubmitBooking.setEnabled(false);
+        btnSubmitBooking.setText("LOADING SCHEDULES…");
+        actSelectProfessor.setText("Loading…", false);
+        actAvailableSlot.setText("", false);
 
-        List<String> facultyList = scheduleRepository.getAllFacultyNamesWithPostedSchedules();
-
-        if (facultyList.isEmpty()) {
-            if (actSelectProfessor != null) {
-                actSelectProfessor.setText("No professor schedules posted yet", false);
+        repository.loadOpenSlots(new ScheduleRepository.ResultCallback<List<PostedSchedule>>() {
+            @Override
+            public void onSuccess(List<PostedSchedule> data, String message) {
+                if (!isAdded()) return;
+                slotsByProfessor.clear();
+                if (data != null) {
+                    for (PostedSchedule s : data) {
+                        String key = s.getFacultyDisplayName();
+                        List<PostedSchedule> list = slotsByProfessor.get(key);
+                        if (list == null) {
+                            list = new ArrayList<>();
+                            slotsByProfessor.put(key, list);
+                        }
+                        list.add(s);
+                    }
+                }
+                showProfessors();
             }
-            if (actAvailableSlot != null) {
-                actAvailableSlot.setText("No available schedules", false);
-            }
-            if (btnSubmitBooking != null) {
-                btnSubmitBooking.setEnabled(false);
-                btnSubmitBooking.setText("NO SCHEDULES AVAILABLE TO BOOK");
-            }
-            return;
-        }
 
-        if (btnSubmitBooking != null) {
-            btnSubmitBooking.setEnabled(true);
-            btnSubmitBooking.setText("BOOK SELECTED SCHEDULE");
-        }
-
-        ArrayAdapter<String> profAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_dropdown_item_1line, facultyList);
-
-        if (actSelectProfessor != null) {
-            actSelectProfessor.setAdapter(profAdapter);
-            actSelectProfessor.setText(facultyList.get(0), false);
-
-            actSelectProfessor.setOnItemClickListener((parent, view, position, id) -> {
-                String selectedProf = (String) parent.getItemAtPosition(position);
-                loadAvailableSlotsForProfessor(selectedProf);
-            });
-        }
-
-        loadAvailableSlotsForProfessor(facultyList.get(0));
-    }
-
-    private void loadAvailableSlotsForProfessor(String profName) {
-        if (getContext() == null || actAvailableSlot == null || scheduleRepository == null) return;
-
-        currentSelectedProfSchedules = scheduleRepository.getUnbookedSchedulesByFaculty(profName);
-
-        if (currentSelectedProfSchedules.isEmpty()) {
-            actAvailableSlot.setText("No active slots for this professor", false);
-            selectedScheduleSlot = null;
-            if (btnSubmitBooking != null) btnSubmitBooking.setEnabled(false);
-            return;
-        }
-
-        if (btnSubmitBooking != null) btnSubmitBooking.setEnabled(true);
-
-        List<String> slotDisplayTexts = new ArrayList<>();
-        for (PostedSchedule s : currentSelectedProfSchedules) {
-            String display = s.getDate() + " • " + s.getTimeSlot() + " | " + s.getCategory() + " (" + s.getLocation() + ")";
-            slotDisplayTexts.add(display);
-        }
-
-        ArrayAdapter<String> slotAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_dropdown_item_1line, slotDisplayTexts);
-        actAvailableSlot.setAdapter(slotAdapter);
-        actAvailableSlot.setText(slotDisplayTexts.get(0), false);
-        selectedScheduleSlot = currentSelectedProfSchedules.get(0);
-
-        actAvailableSlot.setOnItemClickListener((parent, view, position, id) -> {
-            if (position >= 0 && position < currentSelectedProfSchedules.size()) {
-                selectedScheduleSlot = currentSelectedProfSchedules.get(position);
+            @Override
+            public void onError(String message) {
+                if (!isAdded()) return;
+                actSelectProfessor.setText("Couldn't load schedules", false);
+                btnSubmitBooking.setText("TRY AGAIN");
+                btnSubmitBooking.setEnabled(true);
+                btnSubmitBooking.setOnClickListener(v -> {
+                    btnSubmitBooking.setOnClickListener(x -> attemptBooking());
+                    loadSlots();
+                });
+                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void setupListeners() {
-        if (btnSubmitBooking != null) {
-            btnSubmitBooking.setOnClickListener(v -> {
-                if (selectedScheduleSlot == null) {
-                    Toast.makeText(getContext(), "Please select an available schedule slot.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+    private void showProfessors() {
+        btnSubmitBooking.setOnClickListener(v -> attemptBooking());
 
-                String studentName = sessionManager != null && !TextUtils.isEmpty(sessionManager.getFullName())
-                        ? sessionManager.getFullName()
-                        : "Student";
-
-                boolean success = scheduleRepository.bookSchedule(selectedScheduleSlot.getId(), studentName);
-
-                if (success && getContext() != null) {
-                    Toast.makeText(getContext(), "Appointment successfully booked with " + selectedScheduleSlot.getFacultyName() + " for " + selectedScheduleSlot.getDate() + " (" + selectedScheduleSlot.getTimeSlot() + ")!", Toast.LENGTH_LONG).show();
-
-                    if (getActivity() instanceof HomeActivity) {
-                        ((HomeActivity) getActivity()).selectTab(R.id.nav_appointments);
-                    }
-                }
-            });
+        if (slotsByProfessor.isEmpty()) {
+            actSelectProfessor.setAdapter(null);
+            actSelectProfessor.setText("No professor schedules posted yet", false);
+            actAvailableSlot.setAdapter(null);
+            actAvailableSlot.setText("No available schedules", false);
+            selectedSlot = null;
+            btnSubmitBooking.setEnabled(false);
+            btnSubmitBooking.setText("NO SCHEDULES AVAILABLE TO BOOK");
+            return;
         }
+
+        List<String> names = new ArrayList<>(slotsByProfessor.keySet());
+        actSelectProfessor.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_dropdown_item_1line, names));
+        actSelectProfessor.setText(names.get(0), false);
+        actSelectProfessor.setOnItemClickListener((parent, v, position, id) ->
+                showSlotsFor((String) parent.getItemAtPosition(position)));
+
+        showSlotsFor(names.get(0));
+    }
+
+    private void showSlotsFor(String professor) {
+        currentSlots = slotsByProfessor.get(professor);
+        if (currentSlots == null || currentSlots.isEmpty()) {
+            actAvailableSlot.setAdapter(null);
+            actAvailableSlot.setText("No active slots for this professor", false);
+            selectedSlot = null;
+            btnSubmitBooking.setEnabled(false);
+            btnSubmitBooking.setText("NO SLOTS AVAILABLE");
+            return;
+        }
+
+        List<String> labels = new ArrayList<>();
+        for (PostedSchedule s : currentSlots) {
+            labels.add(s.getDisplayDate() + " • " + s.getTimeSlot() + " | "
+                    + s.getCategory() + " (" + s.getLocation() + ")");
+        }
+        actAvailableSlot.setAdapter(new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_dropdown_item_1line, labels));
+        actAvailableSlot.setText(labels.get(0), false);
+        selectedSlot = currentSlots.get(0);
+        actAvailableSlot.setOnItemClickListener((parent, v, position, id) -> {
+            if (position >= 0 && position < currentSlots.size()) selectedSlot = currentSlots.get(position);
+        });
+
+        btnSubmitBooking.setEnabled(true);
+        btnSubmitBooking.setText("BOOK SELECTED SCHEDULE");
+    }
+
+    private void attemptBooking() {
+        if (selectedSlot == null) {
+            Toast.makeText(requireContext(), "Please select an available schedule slot.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String purpose = etBookingReason.getText() != null ? etBookingReason.getText().toString().trim() : "";
+        if (TextUtils.isEmpty(purpose)) {
+            etBookingReason.setError("Please enter the purpose of your appointment.");
+            return;
+        }
+
+        final PostedSchedule slot = selectedSlot;
+        btnSubmitBooking.setEnabled(false);
+        btnSubmitBooking.setText("BOOKING…");
+
+        repository.bookSlot(slot.getId(), sessionManager.getUserId(), purpose,
+                new ScheduleRepository.ResultCallback<PostedSchedule>() {
+                    @Override
+                    public void onSuccess(PostedSchedule data, String message) {
+                        if (!isAdded()) return;
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        if (getActivity() instanceof HomeActivity) {
+                            ((HomeActivity) getActivity()).selectTab(R.id.nav_appointments);
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        if (!isAdded()) return;
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        // The slot may have been taken meanwhile, so refresh the list.
+                        loadSlots();
+                    }
+                });
     }
 }

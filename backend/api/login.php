@@ -59,9 +59,9 @@ try {
             $idCol = in_array('faculty_id', $instCols) ? 'faculty_id' : (in_array('instructor_id', $instCols) ? 'instructor_id' : 'student_id');
             $pkCol = in_array('instructor_id', $instCols) ? 'instructor_id' : 'user_id';
 
-            $sql = "SELECT * FROM `$tableName` WHERE LOWER(`email`) = LOWER(:id) OR LOWER(`$idCol`) = LOWER(:id) LIMIT 1";
+            $sql = "SELECT * FROM `$tableName` WHERE LOWER(`email`) = LOWER(:id1) OR LOWER(`$idCol`) = LOWER(:id2) LIMIT 1";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([':id' => $identifier]);
+            $stmt->execute([':id1' => $identifier, ':id2' => $identifier]);
             $inst = $stmt->fetch();
 
             if ($inst && password_verify($password, $inst['password'])) {
@@ -98,9 +98,9 @@ try {
             $idCol = in_array('student_id', $userCols) ? 'student_id' : 'id';
             $pkCol = in_array('user_id', $userCols) ? 'user_id' : 'id';
 
-            $sql = "SELECT * FROM `$tableName` WHERE LOWER(`email`) = LOWER(:id) OR LOWER(`$idCol`) = LOWER(:id) LIMIT 1";
+            $sql = "SELECT * FROM `$tableName` WHERE LOWER(`email`) = LOWER(:id1) OR LOWER(`$idCol`) = LOWER(:id2) LIMIT 1";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([':id' => $identifier]);
+            $stmt->execute([':id1' => $identifier, ':id2' => $identifier]);
             $usr = $stmt->fetch();
 
             if ($usr && password_verify($password, $usr['password'])) {

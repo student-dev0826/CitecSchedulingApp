@@ -42,6 +42,22 @@
                     android:text="Student Dashboard &amp; Portal"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvLiveDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/primary_dark"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvLiveTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <ImageView
@@ -55,6 +71,20 @@
                 android:padding="8dp"
                 android:src="@drawable/ic_notifications"
                 app:tint="@color/primary" />
+            <TextView
+                android:id="@+id/tvNotifBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@id/ivNotification"
+                android:layout_alignEnd="@id/ivNotification"
+                android:background="#DC2626"
+                android:gravity="center"
+                android:minWidth="16dp"
+                android:paddingHorizontal="4dp"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </RelativeLayout>
 
         <!-- User Information Banner Card -->
@@ -157,7 +187,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="3"
+                        android:id="@+id/tvStatUpcoming"
+                        android:text="0"
                         android:textColor="@color/primary"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -193,7 +224,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="5"
+                        android:id="@+id/tvStatToday"
+                        android:text="0"
                         android:textColor="@color/accent"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -202,7 +234,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Classes Today"
+                        android:text="Today"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp" />
                 </LinearLayout>
@@ -229,7 +261,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="8"
+                        android:id="@+id/tvStatCompleted"
+                        android:text="0"
                         android:textColor="#16A34A"
                         android:textSize="22sp"
                         android:textStyle="bold" />
@@ -375,7 +408,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Academic Advising &amp; Consultation"
+                        android:id="@+id/tvNextTitle"
+                        android:text="Loading…"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -387,6 +421,7 @@
                         android:background="#DCFCE7"
                         android:paddingHorizontal="8dp"
                         android:paddingVertical="3dp"
+                        android:id="@+id/tvNextStatus"
                         android:text="CONFIRMED"
                         android:textColor="#166534"
                         android:textSize="10sp"
@@ -411,7 +446,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="Tomorrow • 10:00 AM - 11:00 AM"
+                        android:id="@+id/tvNextTime"
+                        android:text=""
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
                 </LinearLayout>
@@ -434,7 +470,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="CITEC Office, Building B - Room 204"
+                        android:id="@+id/tvNextLocation"
+                        android:text=""
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
                 </LinearLayout>
