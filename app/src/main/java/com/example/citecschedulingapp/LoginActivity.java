@@ -219,7 +219,7 @@ public class LoginActivity extends AppCompatActivity {
                                 .getInstance(LoginActivity.this).authenticate(identifier, password, targetRole);
                         if (local != null) {
                             boolean rememberMe = cbRememberMe != null && cbRememberMe.isChecked();
-                            sessionManager.saveUserSession(local.toUser(1), local.role, rememberMe);
+                            sessionManager.saveUserSession(local.toUser(-1), local.role, rememberMe);
                             navigateToNextScreen();
                             return;
                         }

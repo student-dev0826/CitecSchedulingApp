@@ -20,6 +20,19 @@ public class FacultyHomeActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigationView;
     private SessionManager sessionManager;
 
+    // Lets "Transfer" on a booked card open the Transfer tab with that appointment preselected.
+    private int pendingTransferId = -1;
+
+    public void setPendingTransferId(int scheduleId) {
+        pendingTransferId = scheduleId;
+    }
+
+    public int consumePendingTransferId() {
+        int id = pendingTransferId;
+        pendingTransferId = -1;
+        return id;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

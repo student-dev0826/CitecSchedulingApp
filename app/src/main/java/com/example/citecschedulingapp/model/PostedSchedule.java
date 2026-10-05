@@ -1,103 +1,102 @@
 package com.example.citecschedulingapp.model;
 
-import java.util.UUID;
+import com.example.citecschedulingapp.AppTime;
+import com.google.gson.annotations.SerializedName;
 
+/** One consultation slot as stored on the server. */
 public class PostedSchedule {
-    private String id;
+
+    @SerializedName("schedule_id")
+    private int id;
+
+    @SerializedName("faculty_id")
+    private int facultyId;
+
+    @SerializedName("faculty_name")
     private String facultyName;
-    private String facultyId;
+
+    @SerializedName("department")
+    private String department;
+
+    /** yyyy-MM-dd */
+    @SerializedName("schedule_date")
     private String date;
+
+    @SerializedName("time_slot")
     private String timeSlot;
+
+    /** yyyy-MM-dd HH:mm:ss (Philippine time) */
+    @SerializedName("start_at")
+    private String startAt;
+
+    @SerializedName("end_at")
+    private String endAt;
+
+    @SerializedName("category")
     private String category;
+
+    @SerializedName("location")
     private String location;
-    private boolean isBooked;
-    private String bookedByStudentName;
 
-    public PostedSchedule() {
-        this.id = UUID.randomUUID().toString();
+    /** OPEN or BOOKED */
+    @SerializedName("status")
+    private String status;
+
+    @SerializedName("student_id")
+    private Integer studentId;
+
+    @SerializedName("student_name")
+    private String studentName;
+
+    @SerializedName("student_number")
+    private String studentNumber;
+
+    @SerializedName("purpose")
+    private String purpose;
+
+    @SerializedName("transfer_reason")
+    private String transferReason;
+
+    public int getId() { return id; }
+    public int getFacultyId() { return facultyId; }
+    public String getFacultyName() { return facultyName != null ? facultyName : ""; }
+    public String getDepartment() { return department; }
+    public String getDate() { return date; }
+    public String getTimeSlot() { return timeSlot != null ? timeSlot : ""; }
+    public String getCategory() { return category != null ? category : ""; }
+    public String getLocation() { return location != null ? location : ""; }
+    public Integer getStudentId() { return studentId; }
+    public String getStudentName() { return studentName != null ? studentName : ""; }
+    public String getStudentNumber() { return studentNumber; }
+    public String getPurpose() { return purpose != null ? purpose : ""; }
+    public String getTransferReason() { return transferReason != null ? transferReason : ""; }
+
+    public boolean isBooked() { return "BOOKED".equalsIgnoreCase(status); }
+
+    public String getDisplayDate() { return AppTime.prettyDate(date); }
+
+    public long getStartMillis() { return AppTime.parseDateTime(startAt); }
+
+    public long getEndMillis() { return AppTime.parseDateTime(endAt); }
+
+    /** True once the slot's end time has passed (uses the live clock). */
+    public boolean hasEnded() {
+        long end = getEndMillis();
+        return end > 0 && end < System.currentTimeMillis();
     }
 
-    public PostedSchedule(String facultyName, String facultyId, String date, String timeSlot, String category, String location) {
-        this.id = UUID.randomUUID().toString();
-        this.facultyName = facultyName;
-        this.facultyId = facultyId;
-        this.date = date;
-        this.timeSlot = timeSlot;
-        this.category = category;
-        this.location = location;
-        this.isBooked = false;
-        this.bookedByStudentName = "";
-    }
+    public String getFacultyDisplayName() { return formatFacultyName(facultyName); }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getFacultyName() {
-        return facultyName;
-    }
-
-    public void setFacultyName(String facultyName) {
-        this.facultyName = facultyName;
-    }
-
-    public String getFacultyId() {
-        return facultyId;
-    }
-
-    public void setFacultyId(String facultyId) {
-        this.facultyId = facultyId;
-    }
-
-    public String getDate() {
-        return date;
-    }
-
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-    public String getTimeSlot() {
-        return timeSlot;
-    }
-
-    public void setTimeSlot(String timeSlot) {
-        this.timeSlot = timeSlot;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public boolean isBooked() {
-        return isBooked;
-    }
-
-    public void setBooked(boolean booked) {
-        isBooked = booked;
-    }
-
-    public String getBookedByStudentName() {
-        return bookedByStudentName;
-    }
-
-    public void setBookedByStudentName(String bookedByStudentName) {
-        this.bookedByStudentName = bookedByStudentName;
+    /** Adds "Prof." unless the name already carries a title. */
+    public static String formatFacultyName(String name) {
+        if (name == null || name.trim().isEmpty()) return "Faculty";
+        String n = name.trim();
+        String lower = n.toLowerCase();
+        if (lower.startsWith("prof") || lower.startsWith("dr.") || lower.startsWith("dr ")
+                || lower.startsWith("engr") || lower.startsWith("mr.") || lower.startsWith("ms.")
+                || lower.startsWith("mrs.")) {
+            return n;
+        }
+        return "Prof. " + n;
     }
 }

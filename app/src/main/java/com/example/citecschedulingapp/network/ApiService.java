@@ -4,8 +4,17 @@ import com.example.citecschedulingapp.model.LoginResponse;
 import com.example.citecschedulingapp.model.RegisterResponse;
 import com.example.citecschedulingapp.model.ForgotPasswordResponse;
 
+import com.example.citecschedulingapp.model.ApiResult;
+import com.example.citecschedulingapp.model.FacultyItem;
+import com.example.citecschedulingapp.model.NotificationItem;
+import com.example.citecschedulingapp.model.PostedSchedule;
+
+import java.util.List;
+import java.util.Map;
+
 import retrofit2.Call;
 import retrofit2.http.Field;
+import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
 
@@ -102,4 +111,26 @@ public interface ApiService {
             @Field("new_password") String newPassword,
             @Field("confirm_password") String confirmPassword
     );
+
+    // ---- Schedules (all go to schedules.php; the "action" field picks what to do) ----
+
+    @FormUrlEncoded
+    @POST("schedules.php")
+    Call<ApiResult<List<PostedSchedule>>> scheduleList(@FieldMap Map<String, String> fields);
+
+    @FormUrlEncoded
+    @POST("schedules.php")
+    Call<ApiResult<PostedSchedule>> scheduleOne(@FieldMap Map<String, String> fields);
+
+    @FormUrlEncoded
+    @POST("schedules.php")
+    Call<ApiResult<Object>> scheduleSimple(@FieldMap Map<String, String> fields);
+
+    @FormUrlEncoded
+    @POST("schedules.php")
+    Call<ApiResult<List<FacultyItem>>> facultyList(@FieldMap Map<String, String> fields);
+
+    @FormUrlEncoded
+    @POST("schedules.php")
+    Call<ApiResult<List<NotificationItem>>> notificationList(@FieldMap Map<String, String> fields);
 }

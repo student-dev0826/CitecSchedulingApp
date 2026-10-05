@@ -1,6 +1,5 @@
 package com.example.citecschedulingapp.fragment;
 
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,10 +15,12 @@ import com.example.citecschedulingapp.FacultyHomeActivity;
 import com.example.citecschedulingapp.R;
 import com.example.citecschedulingapp.ScheduleRepository;
 import com.example.citecschedulingapp.SessionManager;
+import com.example.citecschedulingapp.UiUtil;
 import com.example.citecschedulingapp.model.PostedSchedule;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FacultyScheduleFragment extends Fragment {
@@ -28,7 +29,7 @@ public class FacultyScheduleFragment extends Fragment {
     private LinearLayout containerBookedStudents;
 
     private SessionManager sessionManager;
-    private ScheduleRepository scheduleRepository;
+    private ScheduleRepository repository;
 
     @Nullable
     @Override
@@ -40,11 +41,8 @@ public class FacultyScheduleFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (getContext() != null) {
-            sessionManager = new SessionManager(getContext());
-            scheduleRepository = ScheduleRepository.getInstance(getContext());
-        }
-
+        sessionManager = new SessionManager(requireContext());
+        repository = ScheduleRepository.getInstance(requireContext());
         tvNoBookedStudents = view.findViewById(R.id.tvNoBookedStudents);
         containerBookedStudents = view.findViewById(R.id.containerBookedStudents);
 
@@ -52,80 +50,74 @@ public class FacultyScheduleFragment extends Fragment {
     }
 
     private void loadBookedStudents() {
-        if (containerBookedStudents == null || scheduleRepository == null || sessionManager == null) return;
+        tvNoBookedStudents.setText("Loading…");
+        tvNoBookedStudents.setVisibility(View.VISIBLE);
 
-        containerBookedStudents.removeAllViews();
+        repository.loadFacultySlots(sessionManager.getUserId(),
+                new ScheduleRepository.ResultCallback<List<PostedSchedule>>() {
+                    @Override
+                    public void onSuccess(List<PostedSchedule> data, String message) {
+                        if (!isAdded()) return;
+                        containerBookedStudents.removeAllViews();
+                        List<PostedSchedule> booked = new ArrayList<>();
+                        if (data != null) for (PostedSchedule s : data) if (s.isBooked()) booked.add(s);
 
-        String profName = "Prof. " + sessionManager.getFullName();
-        List<PostedSchedule> bookedSchedules = scheduleRepository.getBookedSchedulesByFaculty(profName);
+                        if (booked.isEmpty()) {
+                            tvNoBookedStudents.setText("No student consultations booked with you yet.");
+                            tvNoBookedStudents.setVisibility(View.VISIBLE);
+                            return;
+                        }
+                        tvNoBookedStudents.setVisibility(View.GONE);
+                        for (PostedSchedule s : booked) containerBookedStudents.addView(buildCard(s));
+                    }
 
-        if (bookedSchedules.isEmpty()) {
-            if (tvNoBookedStudents != null) tvNoBookedStudents.setVisibility(View.VISIBLE);
-        } else {
-            if (tvNoBookedStudents != null) tvNoBookedStudents.setVisibility(View.GONE);
-
-            for (PostedSchedule schedule : bookedSchedules) {
-                View cardView = createBookedStudentCardView(schedule);
-                containerBookedStudents.addView(cardView);
-            }
-        }
+                    @Override
+                    public void onError(String message) {
+                        if (!isAdded()) return;
+                        tvNoBookedStudents.setText(message);
+                        tvNoBookedStudents.setVisibility(View.VISIBLE);
+                    }
+                });
     }
 
-    private View createBookedStudentCardView(PostedSchedule schedule) {
-        MaterialCardView card = new MaterialCardView(requireContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.setMargins(0, 0, 0, 20);
-        card.setLayoutParams(params);
-        card.setCardElevation(4f);
-        card.setRadius(24f);
+    private View buildCard(final PostedSchedule s) {
+        android.content.Context c = requireContext();
+        MaterialCardView card = UiUtil.card(c);
+        LinearLayout col = UiUtil.column(c);
 
-        LinearLayout layout = new LinearLayout(requireContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(32, 32, 32, 32);
+        boolean ended = s.hasEnded();
+        TextView badge = ended
+                ? UiUtil.badge(c, "COMPLETED", "#E5E7EB", "#374151")
+                : UiUtil.badge(c, "UPCOMING", "#DCFCE7", "#166534");
+        String student = s.getStudentName();
+        if (s.getStudentNumber() != null && !s.getStudentNumber().isEmpty()) {
+            student += " (" + s.getStudentNumber() + ")";
+        }
+        col.addView(UiUtil.headerRow(c, "Student: " + student, badge));
+        col.addView(UiUtil.text(c, "Purpose: " + (s.getPurpose().isEmpty() ? s.getCategory() : s.getPurpose()),
+                14f, R.color.text_primary, false));
+        col.addView(UiUtil.text(c, s.getDisplayDate() + " • " + s.getTimeSlot() + " (" + s.getLocation() + ")",
+                13f, R.color.text_secondary, false));
 
-        TextView tvStudent = new TextView(requireContext());
-        tvStudent.setText("Student: " + schedule.getBookedByStudentName());
-        tvStudent.setTextSize(16f);
-        tvStudent.setTextColor(getResources().getColor(R.color.primary));
-        tvStudent.setTypeface(null, Typeface.BOLD);
+        if (!ended) {
+            MaterialButton btn = new MaterialButton(c);
+            btn.setText("Transfer to Another Faculty");
+            btn.setTextSize(12f);
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            p.topMargin = UiUtil.dp(c, 12);
+            btn.setLayoutParams(p);
+            btn.setOnClickListener(v -> {
+                if (getActivity() instanceof FacultyHomeActivity) {
+                    FacultyHomeActivity a = (FacultyHomeActivity) getActivity();
+                    a.setPendingTransferId(s.getId());
+                    a.selectTab(R.id.nav_faculty_transfer);
+                }
+            });
+            col.addView(btn);
+        }
 
-        TextView tvCategory = new TextView(requireContext());
-        tvCategory.setText("Purpose: " + schedule.getCategory());
-        tvCategory.setTextSize(14f);
-        tvCategory.setTextColor(getResources().getColor(R.color.text_primary));
-        tvCategory.setPadding(0, 8, 0, 0);
-
-        TextView tvDateTime = new TextView(requireContext());
-        tvDateTime.setText(schedule.getDate() + " • " + schedule.getTimeSlot() + " (" + schedule.getLocation() + ")");
-        tvDateTime.setTextSize(13f);
-        tvDateTime.setTextColor(getResources().getColor(R.color.text_secondary));
-        tvDateTime.setPadding(0, 4, 0, 0);
-
-        MaterialButton btnTransfer = new MaterialButton(requireContext());
-        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        btnParams.setMargins(0, 16, 0, 0);
-        btnTransfer.setLayoutParams(btnParams);
-        btnTransfer.setText("Transfer to Another Faculty");
-        btnTransfer.setTextSize(12f);
-
-        btnTransfer.setOnClickListener(v -> {
-            if (getActivity() instanceof FacultyHomeActivity) {
-                ((FacultyHomeActivity) getActivity()).selectTab(R.id.nav_faculty_transfer);
-            }
-        });
-
-        layout.addView(tvStudent);
-        layout.addView(tvCategory);
-        layout.addView(tvDateTime);
-        layout.addView(btnTransfer);
-
-        card.addView(layout);
+        card.addView(col);
         return card;
     }
 }
