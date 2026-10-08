@@ -1,5 +1,6 @@
 package com.example.citecschedulingapp.fragment;
 
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -69,6 +70,12 @@ public class AppointmentsFragment extends Fragment {
         load();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        load();
+    }
+
     private void load() {
         tvEmpty.setText("Loading…");
         tvEmpty.setVisibility(View.VISIBLE);
@@ -77,7 +84,7 @@ public class AppointmentsFragment extends Fragment {
                     @Override
                     public void onSuccess(List<PostedSchedule> data, String message) {
                         if (!isAdded()) return;
-                        appointments = data != null ? data : new ArrayList<PostedSchedule>();
+                        appointments = data != null ? data : new ArrayList<>();
                         loaded = true;
                         render();
                     }
@@ -120,14 +127,8 @@ public class AppointmentsFragment extends Fragment {
 
         container.removeAllViews();
         int shown = 0;
-        // Upcoming first (soonest first); completed after, most recent first.
-        List<PostedSchedule> ordered = new ArrayList<>();
-        for (PostedSchedule p : appointments) if (!p.hasEnded()) ordered.add(p);
-        List<PostedSchedule> done = new ArrayList<>();
-        for (PostedSchedule p : appointments) if (p.hasEnded()) done.add(0, p);
-        ordered.addAll(done);
 
-        for (PostedSchedule p : ordered) {
+        for (PostedSchedule p : appointments) {
             boolean ended = p.hasEnded();
             if (filter == FILTER_UPCOMING && ended) continue;
             if (filter == FILTER_COMPLETED && !ended) continue;
@@ -146,29 +147,47 @@ public class AppointmentsFragment extends Fragment {
     }
 
     private View buildCard(final PostedSchedule p, boolean ended) {
-        android.content.Context c = requireContext();
+        Context c = requireContext();
         MaterialCardView card = UiUtil.card(c);
         LinearLayout col = UiUtil.column(c);
 
-        TextView badge = ended
-                ? UiUtil.badge(c, "COMPLETED", "#E5E7EB", "#374151")
-                : UiUtil.badge(c, "CONFIRMED", "#DCFCE7", "#166534");
+        boolean isPending = p.isPending();
+        boolean isDeclined = p.isDeclined();
+
+        TextView badge;
+        if (ended) {
+            badge = UiUtil.badge(c, "COMPLETED", "#E5E7EB", "#374151");
+        } else if (isPending) {
+            badge = UiUtil.badge(c, "PENDING APPROVAL", "#FEF3C7", "#92400E");
+        } else if (isDeclined) {
+            badge = UiUtil.badge(c, "DECLINED BY PROFESSOR", "#FEE2E2", "#991B1B");
+        } else {
+            badge = UiUtil.badge(c, "ACCEPTED / CONFIRMED", "#DCFCE7", "#166534");
+        }
+
         col.addView(UiUtil.headerRow(c, p.getCategory(), badge));
-        col.addView(UiUtil.text(c, "Advisor: " + p.getFacultyDisplayName(), 13f, R.color.text_primary, false));
+        col.addView(UiUtil.text(c, "Professor: " + p.getFacultyDisplayName(), 13f, R.color.text_primary, false));
         col.addView(UiUtil.text(c, p.getDisplayDate() + " • " + p.getTimeSlot(), 13f, R.color.text_secondary, false));
         col.addView(UiUtil.text(c, "Location: " + p.getLocation(), 13f, R.color.text_secondary, false));
+
         if (!p.getPurpose().isEmpty()) {
             col.addView(UiUtil.text(c, "Purpose: " + p.getPurpose(), 13f, R.color.text_secondary, false));
         }
+
+        if (isDeclined && !p.getDeclineReason().isEmpty()) {
+            col.addView(UiUtil.text(c, "Decline Reason from Professor: " + p.getDeclineReason(),
+                    13f, Color.parseColor("#991B1B"), true));
+        }
+
         if (!p.getTransferReason().isEmpty()) {
             col.addView(UiUtil.text(c, "Transferred to this professor. Reason: " + p.getTransferReason(),
                     12f, R.color.accent, false));
         }
 
-        if (!ended) {
+        if (!ended && !isDeclined) {
             LinearLayout row = UiUtil.buttonRow(c);
             MaterialButton reschedule = UiUtil.outlinedButton(c, "Reschedule", c.getColor(R.color.primary));
-            MaterialButton cancel = UiUtil.outlinedButton(c, "Cancel", Color.parseColor("#DC2626"));
+            MaterialButton cancel = UiUtil.outlinedButton(c, "Cancel Request", Color.parseColor("#DC2626"));
             UiUtil.addToButtonRow(c, row, reschedule, true);
             UiUtil.addToButtonRow(c, row, cancel, false);
             reschedule.setOnClickListener(v -> confirm(p, true));

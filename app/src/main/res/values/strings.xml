@@ -34,6 +34,7 @@
     <string name="nav_home">Home</string>
     <string name="nav_schedule">Schedule</string>
     <string name="nav_book">Book</string>
+    <string name="nav_chat">Chat</string>
     <string name="nav_appointments">Appointments</string>
     <string name="nav_profile">Profile</string>
 
@@ -42,6 +43,7 @@
     <string name="nav_faculty_schedules">Schedules</string>
     <string name="nav_faculty_availability">Set Availability</string>
     <string name="nav_faculty_transfer">Transfer</string>
+    <string name="nav_faculty_chat">Chat</string>
 
     <string name="label_account_type">Account Type / Role</string>
     <string name="label_role_student">Student</string>

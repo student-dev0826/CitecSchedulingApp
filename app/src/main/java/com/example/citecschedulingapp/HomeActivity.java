@@ -10,9 +10,9 @@ import androidx.fragment.app.FragmentManager;
 
 import com.example.citecschedulingapp.fragment.AppointmentsFragment;
 import com.example.citecschedulingapp.fragment.BookFragment;
+import com.example.citecschedulingapp.fragment.ChatFragment;
 import com.example.citecschedulingapp.fragment.HomeFragment;
 import com.example.citecschedulingapp.fragment.ProfileFragment;
-import com.example.citecschedulingapp.fragment.ScheduleFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class HomeActivity extends AppCompatActivity {
@@ -59,10 +59,10 @@ public class HomeActivity extends AppCompatActivity {
 
             if (itemId == R.id.nav_home) {
                 fragment = new HomeFragment();
-            } else if (itemId == R.id.nav_schedule) {
-                fragment = new ScheduleFragment();
             } else if (itemId == R.id.nav_book) {
                 fragment = new BookFragment();
+            } else if (itemId == R.id.nav_chat) {
+                fragment = new ChatFragment();
             } else if (itemId == R.id.nav_appointments) {
                 fragment = new AppointmentsFragment();
             } else if (itemId == R.id.nav_profile) {
