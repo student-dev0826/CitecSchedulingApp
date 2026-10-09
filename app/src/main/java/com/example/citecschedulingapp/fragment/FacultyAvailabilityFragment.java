@@ -197,7 +197,9 @@ public class FacultyAvailabilityFragment extends Fragment {
         LinearLayout col = UiUtil.column(c);
 
         TextView badge;
-        if (s.isBooked()) {
+        if (s.isCancelled()) {
+            badge = UiUtil.badge(c, "CANCELLED", "#FEE2E2", "#991B1B");
+        } else if (s.isBooked()) {
             badge = UiUtil.badge(c, "BOOKED", "#DBEAFE", "#1E40AF");
         } else if (s.hasEnded()) {
             badge = UiUtil.badge(c, "EXPIRED", "#E5E7EB", "#374151");
@@ -207,7 +209,7 @@ public class FacultyAvailabilityFragment extends Fragment {
         col.addView(UiUtil.headerRow(c, s.getCategory(), badge));
         col.addView(UiUtil.text(c, s.getDisplayDate() + " • " + s.getTimeSlot(), 14f, R.color.text_primary, false));
         col.addView(UiUtil.text(c, s.isBooked()
-                        ? "Booked by: " + s.getStudentName()
+                        ? (s.isCancelled() ? "Cancelled — was booked by: " : "Booked by: ") + s.getStudentName()
                         : "Location: " + s.getLocation(),
                 13f, s.isBooked() ? R.color.accent : R.color.text_secondary, false));
 

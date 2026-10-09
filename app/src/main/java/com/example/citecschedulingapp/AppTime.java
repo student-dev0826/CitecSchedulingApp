@@ -39,6 +39,18 @@ public final class AppTime {
         }
     }
 
+    /** "2026-10-26" + "09:00 AM - 10:00 AM" -> millis of the slot's start, or 0 if unreadable. */
+    public static long slotStartMillis(String isoDate, String timeSlot) {
+        if (isoDate == null || timeSlot == null) return 0L;
+        String start = timeSlot.split("[-\u2013]")[0].trim();
+        try {
+            Date d = fixed("yyyy-MM-dd hh:mm a").parse(isoDate.trim() + " " + start);
+            return d != null ? d.getTime() : 0L;
+        } catch (ParseException e) {
+            return 0L;
+        }
+    }
+
     /** "2026-10-26" -> "Oct 26, 2026". */
     public static String prettyDate(String iso) {
         if (iso == null) return "";

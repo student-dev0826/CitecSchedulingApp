@@ -78,7 +78,7 @@ public class FacultyTransferFragment extends Fragment {
                         if (!isAdded()) return;
                         transferable.clear();
                         if (data != null) {
-                            for (PostedSchedule s : data) if (s.isBooked() && !s.hasEnded()) transferable.add(s);
+                            for (PostedSchedule s : data) if (s.isBooked() && !s.isCancelled() && !s.hasEnded()) transferable.add(s);
                         }
                         showAppointments();
                     }

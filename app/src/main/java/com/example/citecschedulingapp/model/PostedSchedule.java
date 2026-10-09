@@ -38,7 +38,7 @@ public class PostedSchedule {
     @SerializedName("location")
     private String location;
 
-    /** OPEN, BOOKED, PENDING, ACCEPTED, DECLINED */
+    /** OPEN, BOOKED, PENDING, ACCEPTED, DECLINED, CANCELLED */
     @SerializedName("status")
     private String status;
 
@@ -60,6 +60,10 @@ public class PostedSchedule {
     @SerializedName("decline_reason")
     private String declineReason;
 
+    /** Why the professor cancelled a confirmed appointment (status CANCELLED). */
+    @SerializedName("cancel_reason")
+    private String cancelReason;
+
     public int getId() { return id; }
     public int getFacultyId() { return facultyId; }
     public String getFacultyName() { return facultyName != null ? facultyName : ""; }
@@ -74,12 +78,15 @@ public class PostedSchedule {
     public String getPurpose() { return purpose != null ? purpose : ""; }
     public String getTransferReason() { return transferReason != null ? transferReason : ""; }
     public String getDeclineReason() { return declineReason != null ? declineReason : ""; }
+    public String getCancelReason() { return cancelReason != null ? cancelReason : ""; }
     public String getStatus() { return status != null ? status : "OPEN"; }
 
-    public boolean isBooked() { return "BOOKED".equalsIgnoreCase(status) || "ACCEPTED".equalsIgnoreCase(status) || "CONFIRMED".equalsIgnoreCase(status) || "PENDING".equalsIgnoreCase(status) || "DECLINED".equalsIgnoreCase(status); }
+    public boolean isBooked() { return "BOOKED".equalsIgnoreCase(status) || "ACCEPTED".equalsIgnoreCase(status) || "CONFIRMED".equalsIgnoreCase(status) || "PENDING".equalsIgnoreCase(status) || "DECLINED".equalsIgnoreCase(status) || "CANCELLED".equalsIgnoreCase(status); }
     public boolean isPending() { return "PENDING".equalsIgnoreCase(status); }
     public boolean isAccepted() { return "ACCEPTED".equalsIgnoreCase(status) || "CONFIRMED".equalsIgnoreCase(status) || "BOOKED".equalsIgnoreCase(status); }
     public boolean isDeclined() { return "DECLINED".equalsIgnoreCase(status); }
+    /** Professor cancelled a previously confirmed appointment. */
+    public boolean isCancelled() { return "CANCELLED".equalsIgnoreCase(status); }
 
     public String getDisplayDate() { return AppTime.prettyDate(date); }
 
