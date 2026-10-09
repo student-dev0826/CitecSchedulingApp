@@ -29,6 +29,9 @@ public class ChatMessage {
     @SerializedName("timestamp")
     private String timestamp;
 
+    @SerializedName("is_read")
+    private int isRead;
+
     public ChatMessage() {
         this.messageId = UUID.randomUUID().toString();
     }
@@ -106,5 +109,9 @@ public class ChatMessage {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public boolean isRead() {
+        return isRead == 1;
     }
 }

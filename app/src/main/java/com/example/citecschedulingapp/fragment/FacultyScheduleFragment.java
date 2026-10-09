@@ -8,6 +8,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -78,6 +80,10 @@ public class FacultyScheduleFragment extends Fragment {
                             }
                         }
 
+                        // Requests waiting for a decision go to the top.
+                        java.util.Collections.sort(booked, (a, b) ->
+                                Boolean.compare(b.isPending() && !b.hasEnded(), a.isPending() && !a.hasEnded()));
+
                         if (booked.isEmpty()) {
                             tvNoBookedStudents.setText("No student consultation requests or bookings yet.");
                             tvNoBookedStudents.setVisibility(View.VISIBLE);
@@ -106,9 +112,16 @@ public class FacultyScheduleFragment extends Fragment {
         boolean ended = s.hasEnded();
         boolean isPending = s.isPending();
         boolean isDeclined = s.isDeclined();
+        boolean isCancelled = s.isCancelled();
 
         TextView badge;
-        if (ended) {
+        if (isCancelled) {
+            badge = UiUtil.badge(c, "CANCELLED", "#FEE2E2", "#991B1B");
+        } else if (ended && isPending) {
+            badge = UiUtil.badge(c, "EXPIRED (NO RESPONSE)", "#E5E7EB", "#374151");
+        } else if (ended && isDeclined) {
+            badge = UiUtil.badge(c, "DECLINED", "#FEE2E2", "#991B1B");
+        } else if (ended) {
             badge = UiUtil.badge(c, "COMPLETED", "#E5E7EB", "#374151");
         } else if (isPending) {
             badge = UiUtil.badge(c, "PENDING REQUEST", "#FEF3C7", "#92400E");
@@ -133,7 +146,18 @@ public class FacultyScheduleFragment extends Fragment {
         }
 
         if (isDeclined && !s.getDeclineReason().isEmpty()) {
-            col.addView(UiUtil.text(c, "Decline Reason: " + s.getDeclineReason(), 12f, Color.parseColor("#991B1B"), true));
+            col.addView(UiUtil.textColor(c, "Decline Reason: " + s.getDeclineReason(), 12f, Color.parseColor("#991B1B"), true));
+        }
+
+        if (isCancelled) {
+            col.addView(UiUtil.textColor(c, "Cancelled. Reason: "
+                            + (s.getCancelReason().isEmpty() ? "No reason provided." : s.getCancelReason()),
+                    12f, Color.parseColor("#991B1B"), true));
+        }
+
+        if (ended && isPending) {
+            col.addView(UiUtil.text(c, "The requested time has passed, so this request can no longer be accepted or declined.",
+                    12f, R.color.text_secondary, false));
         }
 
         if (!ended && isPending) {
@@ -150,11 +174,15 @@ public class FacultyScheduleFragment extends Fragment {
             UiUtil.addToButtonRow(c, row, btnAccept, true);
             UiUtil.addToButtonRow(c, row, btnDecline, false);
 
-            btnAccept.setOnClickListener(v -> respondToRequest(s, "ACCEPTED", null));
+            btnAccept.setOnClickListener(v -> {
+                btnAccept.setEnabled(false);
+                btnDecline.setEnabled(false);
+                respondToRequest(s, "ACCEPTED", null);
+            });
             btnDecline.setOnClickListener(v -> promptDeclineReason(s));
 
             col.addView(row);
-        } else if (!ended && !isDeclined) {
+        } else if (!ended && !isDeclined && !isCancelled) {
             MaterialButton btnTransfer = new MaterialButton(c);
             btnTransfer.setText("Transfer to Another Faculty");
             btnTransfer.setTextSize(12f);
@@ -170,6 +198,14 @@ public class FacultyScheduleFragment extends Fragment {
                 }
             });
             col.addView(btnTransfer);
+
+            MaterialButton btnCancel = UiUtil.outlinedButton(c, "Cancel Appointment", Color.parseColor("#DC2626"));
+            LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            cp.topMargin = UiUtil.dp(c, 8);
+            btnCancel.setLayoutParams(cp);
+            btnCancel.setOnClickListener(v -> promptCancelReason(s));
+            col.addView(btnCancel);
         }
 
         card.addView(col);
@@ -197,6 +233,105 @@ public class FacultyScheduleFragment extends Fragment {
                 .show();
     }
 
+    // Reason choices shown to the professor: label shown, code sent to the server.
+    private static final String[] CANCEL_LABELS = {
+            "Sudden conflict",
+            "Personal matter or emergency",
+            "Meeting",
+            "Others"
+    };
+    private static final String[] CANCEL_CODES = {
+            "SUDDEN_CONFLICT", "PERSONAL_EMERGENCY", "MEETING", "OTHERS"
+    };
+    private static final int OTHERS_INDEX = 3;
+    private static final int OTHERS_MAX_LENGTH = 120;
+
+    private void promptCancelReason(final PostedSchedule s) {
+        final Context c = requireContext();
+
+        LinearLayout body = new LinearLayout(c);
+        body.setOrientation(LinearLayout.VERTICAL);
+        int pad = UiUtil.dp(c, 20);
+        body.setPadding(pad, UiUtil.dp(c, 8), pad, 0);
+
+        TextView info = new TextView(c);
+        info.setText(s.getStudentName() + " • " + s.getDisplayDate() + " • " + s.getTimeSlot()
+                + "\nThe student will be notified with the reason you choose.");
+        info.setTextSize(13f);
+        body.addView(info);
+
+        final RadioGroup group = new RadioGroup(c);
+        group.setOrientation(RadioGroup.VERTICAL);
+        LinearLayout.LayoutParams gp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        gp.topMargin = UiUtil.dp(c, 12);
+        group.setLayoutParams(gp);
+        for (int i = 0; i < CANCEL_LABELS.length; i++) {
+            RadioButton rb = new RadioButton(c);
+            rb.setId(i + 1); // ids 1..4 so index = id - 1
+            rb.setText(CANCEL_LABELS[i]);
+            rb.setTextSize(15f);
+            group.addView(rb);
+        }
+        body.addView(group);
+
+        final EditText other = new EditText(c);
+        other.setHint("Type your reason (required)");
+        other.setVisibility(View.GONE);
+        other.setMaxLines(3);
+        other.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(OTHERS_MAX_LENGTH)});
+        body.addView(other);
+
+        group.setOnCheckedChangeListener((g, checkedId) -> {
+            boolean isOthers = checkedId == OTHERS_INDEX + 1;
+            other.setVisibility(isOthers ? View.VISIBLE : View.GONE);
+            if (isOthers) other.requestFocus();
+        });
+
+        final AlertDialog dialog = new AlertDialog.Builder(c)
+                .setTitle("Cancel this appointment?")
+                .setView(body)
+                .setNegativeButton("Keep it", null)
+                .setPositiveButton("Cancel Appointment", null) // set below so we can validate first
+                .create();
+
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            int checked = group.getCheckedRadioButtonId();
+            if (checked == -1) {
+                Toast.makeText(c, "Please choose a reason.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int index = checked - 1;
+            String text = other.getText().toString().trim();
+            if (index == OTHERS_INDEX && text.length() < 3) {
+                other.setError("Please type your reason");
+                return;
+            }
+            dialog.dismiss();
+            cancelAppointment(s, CANCEL_CODES[index], index == OTHERS_INDEX ? text : "");
+        }));
+        dialog.show();
+    }
+
+    private void cancelAppointment(PostedSchedule s, String reasonType, String reasonText) {
+        repository.cancelAppointmentByFaculty(s.getId(), sessionManager.getUserId(), reasonType, reasonText,
+                new ScheduleRepository.ResultCallback<Object>() {
+                    @Override
+                    public void onSuccess(Object data, String message) {
+                        if (!isAdded()) return;
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        loadBookedStudents();
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        if (!isAdded()) return;
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        loadBookedStudents(); // re-sync in case it changed
+                    }
+                });
+    }
+
     private void respondToRequest(PostedSchedule s, String status, String declineReason) {
         repository.respondAppointment(s.getId(), sessionManager.getUserId(), status, declineReason,
                 new ScheduleRepository.ResultCallback<Object>() {
@@ -211,6 +346,8 @@ public class FacultyScheduleFragment extends Fragment {
                     public void onError(String message) {
                         if (!isAdded()) return;
                         Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        // Re-sync: the request may have been withdrawn or already answered.
+                        loadBookedStudents();
                     }
                 });
     }

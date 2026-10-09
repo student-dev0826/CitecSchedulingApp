@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.button.MaterialButton;
@@ -42,11 +44,17 @@ public final class UiUtil {
         return l;
     }
 
-    public static TextView text(Context c, String s, float sp, int colorRes, boolean bold) {
+    /** Text using a color RESOURCE id (e.g. R.color.text_primary). */
+    public static TextView text(Context c, String s, float sp, @ColorRes int colorRes, boolean bold) {
+        return textColor(c, s, sp, ContextCompat.getColor(c, colorRes), bold);
+    }
+
+    /** Text using a raw ARGB color value (e.g. Color.parseColor("#991B1B")). */
+    public static TextView textColor(Context c, String s, float sp, @ColorInt int color, boolean bold) {
         TextView t = new TextView(c);
         t.setText(s);
         t.setTextSize(sp);
-        t.setTextColor(ContextCompat.getColor(c, colorRes));
+        t.setTextColor(color);
         if (bold) t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);

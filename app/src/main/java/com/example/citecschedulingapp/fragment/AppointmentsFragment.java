@@ -153,9 +153,16 @@ public class AppointmentsFragment extends Fragment {
 
         boolean isPending = p.isPending();
         boolean isDeclined = p.isDeclined();
+        boolean isCancelled = p.isCancelled();
 
         TextView badge;
-        if (ended) {
+        if (isCancelled) {
+            badge = UiUtil.badge(c, "CANCELLED BY PROFESSOR", "#FEE2E2", "#991B1B");
+        } else if (ended && isPending) {
+            badge = UiUtil.badge(c, "EXPIRED (NO RESPONSE)", "#E5E7EB", "#374151");
+        } else if (ended && isDeclined) {
+            badge = UiUtil.badge(c, "DECLINED BY PROFESSOR", "#FEE2E2", "#991B1B");
+        } else if (ended) {
             badge = UiUtil.badge(c, "COMPLETED", "#E5E7EB", "#374151");
         } else if (isPending) {
             badge = UiUtil.badge(c, "PENDING APPROVAL", "#FEF3C7", "#92400E");
@@ -175,7 +182,13 @@ public class AppointmentsFragment extends Fragment {
         }
 
         if (isDeclined && !p.getDeclineReason().isEmpty()) {
-            col.addView(UiUtil.text(c, "Decline Reason from Professor: " + p.getDeclineReason(),
+            col.addView(UiUtil.textColor(c, "Decline Reason from Professor: " + p.getDeclineReason(),
+                    13f, Color.parseColor("#991B1B"), true));
+        }
+
+        if (isCancelled) {
+            col.addView(UiUtil.textColor(c, "Reason from Professor: "
+                            + (p.getCancelReason().isEmpty() ? "No reason provided." : p.getCancelReason()),
                     13f, Color.parseColor("#991B1B"), true));
         }
 
@@ -184,7 +197,7 @@ public class AppointmentsFragment extends Fragment {
                     12f, R.color.accent, false));
         }
 
-        if (!ended && !isDeclined) {
+        if (!ended && !isDeclined && !isCancelled) {
             LinearLayout row = UiUtil.buttonRow(c);
             MaterialButton reschedule = UiUtil.outlinedButton(c, "Reschedule", c.getColor(R.color.primary));
             MaterialButton cancel = UiUtil.outlinedButton(c, "Cancel Request", Color.parseColor("#DC2626"));

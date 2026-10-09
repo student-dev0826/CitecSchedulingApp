@@ -5,6 +5,8 @@ import com.example.citecschedulingapp.model.RegisterResponse;
 import com.example.citecschedulingapp.model.ForgotPasswordResponse;
 
 import com.example.citecschedulingapp.model.ApiResult;
+import com.example.citecschedulingapp.model.ChatConversation;
+import com.example.citecschedulingapp.model.ChatMessage;
 import com.example.citecschedulingapp.model.FacultyItem;
 import com.example.citecschedulingapp.model.NotificationItem;
 import com.example.citecschedulingapp.model.PostedSchedule;
@@ -133,4 +135,18 @@ public interface ApiService {
     @FormUrlEncoded
     @POST("schedules.php")
     Call<ApiResult<List<NotificationItem>>> notificationList(@FieldMap Map<String, String> fields);
+
+    // ---- Chat (all go to chat.php; the "action" field picks what to do) ----
+
+    @FormUrlEncoded
+    @POST("chat.php")
+    Call<ApiResult<Object>> chatSimple(@FieldMap Map<String, String> fields);
+
+    @FormUrlEncoded
+    @POST("chat.php")
+    Call<ApiResult<List<ChatMessage>>> chatMessages(@FieldMap Map<String, String> fields);
+
+    @FormUrlEncoded
+    @POST("chat.php")
+    Call<ApiResult<List<ChatConversation>>> chatConversations(@FieldMap Map<String, String> fields);
 }
