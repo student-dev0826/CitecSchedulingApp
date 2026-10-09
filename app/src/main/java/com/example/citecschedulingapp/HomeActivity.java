@@ -19,6 +19,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private SessionManager sessionManager;
+    private ChatUnreadMonitor chatMonitor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +46,9 @@ public class HomeActivity extends AppCompatActivity {
         bottomNavigationView = findViewById(R.id.bottomNavigation);
 
         setupBottomNavigation();
+
+        chatMonitor = new ChatUnreadMonitor(this, bottomNavigationView, R.id.nav_chat, sessionManager.getStudentId());
+        ChatUnreadMonitor.requestNotificationPermission(this);
 
         // Load default Home fragment if starting fresh
         if (savedInstanceState == null) {
@@ -75,6 +79,27 @@ public class HomeActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (chatMonitor != null) chatMonitor.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (chatMonitor != null) chatMonitor.stop();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && intent.getBooleanExtra(ChatUnreadMonitor.EXTRA_OPEN_CHAT, false)) {
+            selectTab(R.id.nav_chat);
+        }
     }
 
     public void selectTab(int itemId) {

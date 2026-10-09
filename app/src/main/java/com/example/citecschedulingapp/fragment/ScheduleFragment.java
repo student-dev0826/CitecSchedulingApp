@@ -137,6 +137,7 @@ public class ScheduleFragment extends Fragment {
         int shown = 0;
         for (PostedSchedule p : appointments) {
             if (!dayIso[selectedDay].equals(p.getDate())) continue;
+            if (p.isDeclined() || p.isCancelled()) continue;
             containerWeek.addView(buildCard(p));
             shown++;
         }
@@ -153,7 +154,9 @@ public class ScheduleFragment extends Fragment {
         MaterialCardView card = UiUtil.card(c);
         LinearLayout col = UiUtil.column(c);
         TextView badge = p.hasEnded()
-                ? UiUtil.badge(c, "DONE", "#E5E7EB", "#374151")
+                ? UiUtil.badge(c, p.isPending() ? "EXPIRED" : "DONE", "#E5E7EB", "#374151")
+                : p.isPending()
+                ? UiUtil.badge(c, "PENDING", "#FEF3C7", "#92400E")
                 : UiUtil.badge(c, "BOOKED", "#DCFCE7", "#166534");
         col.addView(UiUtil.headerRow(c, p.getCategory(), badge));
         col.addView(UiUtil.text(c, p.getTimeSlot() + " • " + p.getLocation(), 13f, R.color.text_secondary, false));

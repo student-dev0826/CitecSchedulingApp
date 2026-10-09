@@ -43,7 +43,9 @@ public class ChatDetailActivity extends AppCompatActivity {
 
     private Handler pollHandler;
     private Runnable pollRunnable;
-    private int lastMessageCount = -1;
+    private String lastSignature = "";
+    private boolean loading = false;
+    private boolean sending = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +62,8 @@ public class ChatDetailActivity extends AppCompatActivity {
         currentUserRole = sessionManager.getRole();
 
         readIntentExtras();
+        ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+                .cancel(ChatUnreadMonitor.notificationId(recipientId));
         initViews();
         setupListeners();
         setupPolling();
@@ -135,36 +139,72 @@ public class ChatDetailActivity extends AppCompatActivity {
     }
 
     private void attemptSendMessage() {
-        if (etMessageInput == null || etMessageInput.getText() == null) return;
+        if (etMessageInput == null || etMessageInput.getText() == null || sending) return;
 
-        String text = etMessageInput.getText().toString().trim();
+        final String text = etMessageInput.getText().toString().trim();
         if (TextUtils.isEmpty(text)) {
             return;
         }
 
-        chatRepository.sendMessage(
-                currentUserId,
-                currentUserName,
-                currentUserRole,
-                recipientId,
-                recipientName,
-                text
-        );
+        sending = true;
+        btnSend.setEnabled(false);
+        chatRepository.sendMessage(currentUserId, currentUserName, currentUserRole,
+                recipientId, recipientName, text, new ChatRepository.Result<Object>() {
+                    @Override
+                    public void onSuccess(Object data) {
+                        sending = false;
+                        if (isFinishing()) return;
+                        btnSend.setEnabled(true);
+                        etMessageInput.setText("");
+                        loadMessages();
+                    }
 
-        etMessageInput.setText("");
-        loadMessages();
+                    @Override
+                    public void onError(String message) {
+                        sending = false;
+                        if (isFinishing()) return;
+                        btnSend.setEnabled(true);
+                        android.widget.Toast.makeText(ChatDetailActivity.this, message, android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void loadMessages() {
-        if (containerMessages == null || chatRepository == null) return;
+        if (containerMessages == null || chatRepository == null || loading) return;
+        loading = true;
 
-        List<ChatMessage> conversation = chatRepository.getConversation(currentUserId, recipientId);
+        chatRepository.fetchConversation(currentUserId, recipientId, new ChatRepository.Result<List<ChatMessage>>() {
+            @Override
+            public void onSuccess(List<ChatMessage> conversation) {
+                loading = false;
+                if (isFinishing() || conversation == null) return;
+                showMessages(conversation);
+            }
 
-        // Update view only if message count changed
-        if (conversation.size() == lastMessageCount) {
-            return;
+            @Override
+            public void onError(String message) {
+                loading = false;   // keep what is on screen; try again on the next poll
+            }
+        });
+    }
+
+    private void showMessages(List<ChatMessage> conversation) {
+        // Anything the other person sent that I haven't read is read now: tell the server.
+        boolean hasIncomingUnread = false;
+        int mySeen = 0;
+        for (ChatMessage m : conversation) {
+            boolean mine = m.getSenderId().equalsIgnoreCase(currentUserId);
+            if (!mine && !m.isRead()) hasIncomingUnread = true;
+            if (mine && m.isRead()) mySeen++;
         }
-        lastMessageCount = conversation.size();
+        if (hasIncomingUnread) {
+            chatRepository.markRead(currentUserId, recipientId);
+        }
+
+        // Redraw only when something changed (new message or "Seen" status).
+        String signature = conversation.size() + ":" + mySeen;
+        if (signature.equals(lastSignature)) return;
+        lastSignature = signature;
 
         containerMessages.removeAllViews();
 
@@ -178,10 +218,17 @@ public class ChatDetailActivity extends AppCompatActivity {
             return;
         }
 
-        for (ChatMessage msg : conversation) {
+        int lastMineIndex = -1;
+        for (int i = 0; i < conversation.size(); i++) {
+            if (conversation.get(i).getSenderId().equalsIgnoreCase(currentUserId)) lastMineIndex = i;
+        }
+
+        for (int i = 0; i < conversation.size(); i++) {
+            ChatMessage msg = conversation.get(i);
             boolean isSentByMe = msg.getSenderId().equalsIgnoreCase(currentUserId);
-            View bubble = createMessageBubble(msg, isSentByMe);
-            containerMessages.addView(bubble);
+            // Show "Seen" under my most recent message once they have read it.
+            boolean showSeen = isSentByMe && i == lastMineIndex && msg.isRead();
+            containerMessages.addView(createMessageBubble(msg, isSentByMe, showSeen));
         }
 
         if (scrollView != null) {
@@ -189,7 +236,7 @@ public class ChatDetailActivity extends AppCompatActivity {
         }
     }
 
-    private View createMessageBubble(ChatMessage message, boolean isSentByMe) {
+    private View createMessageBubble(ChatMessage message, boolean isSentByMe, boolean showSeen) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setGravity(isSentByMe ? Gravity.END : Gravity.START);
@@ -223,7 +270,7 @@ public class ChatDetailActivity extends AppCompatActivity {
         tvText.setTextColor(isSentByMe ? getResources().getColor(R.color.white) : getResources().getColor(R.color.text_primary));
 
         TextView tvTime = new TextView(this);
-        tvTime.setText(message.getTimestamp());
+        tvTime.setText(message.getTimestamp() + (showSeen ? "  \u2022 Seen" : ""));
         tvTime.setTextSize(10f);
         tvTime.setTextColor(isSentByMe ? getResources().getColor(R.color.bg_light) : getResources().getColor(R.color.text_secondary));
         tvTime.setGravity(Gravity.END);

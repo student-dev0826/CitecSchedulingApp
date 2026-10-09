@@ -5,6 +5,9 @@
     <!-- Internet Permission required for REST API calls -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Lets the app show a notification when a new chat message arrives (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Lets the app open the installer for its own in-app updates -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 

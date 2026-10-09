@@ -113,13 +113,14 @@ public class HomeFragment extends Fragment {
                         int upcoming = 0, todayCount = 0, completed = 0;
                         PostedSchedule next = null;
                         for (PostedSchedule p : list) {
+                            if (p.isDeclined() || p.isCancelled()) continue; // declined/cancelled are not appointments
                             if (p.hasEnded()) {
-                                completed++;
+                                if (p.isAccepted()) completed++;
                             } else {
                                 upcoming++;
-                                if (next == null) next = p; // list is sorted by start time
+                                if (next == null || p.getStartMillis() < next.getStartMillis()) next = p;
+                                if (today.equals(p.getDate())) todayCount++;
                             }
-                            if (today.equals(p.getDate())) todayCount++;
                         }
                         tvStatUpcoming.setText(String.valueOf(upcoming));
                         tvStatToday.setText(String.valueOf(todayCount));
@@ -148,6 +149,7 @@ public class HomeFragment extends Fragment {
         }
         tvNextTitle.setText(next.getCategory());
         tvNextStatus.setVisibility(View.VISIBLE);
+        tvNextStatus.setText(next.isPending() ? "Pending approval" : "Confirmed");
         tvNextTime.setText(AppTime.dayLabel(next.getDate()) + " • " + next.getTimeSlot());
         tvNextLocation.setText(next.getLocation() + " — " + next.getFacultyDisplayName());
     }

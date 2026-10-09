@@ -116,6 +116,21 @@ public class ScheduleRepository {
         enqueue(api.scheduleSimple(m), cb);
     }
 
+    /**
+     * Professor cancels a confirmed appointment.
+     * reasonType: SUDDEN_CONFLICT, PERSONAL_EMERGENCY, MEETING or OTHERS (OTHERS needs reasonText).
+     */
+    public void cancelAppointmentByFaculty(int scheduleId, int facultyId, String reasonType,
+                                           String reasonText, ResultCallback<Object> cb) {
+        if (badId(facultyId, cb)) return;
+        Map<String, String> m = req("faculty_cancel");
+        m.put("schedule_id", String.valueOf(scheduleId));
+        m.put("faculty_id", String.valueOf(facultyId));
+        m.put("reason_type", reasonType);
+        m.put("reason_text", reasonText != null ? reasonText : "");
+        enqueue(api.scheduleSimple(m), cb);
+    }
+
     // ---------- student actions ----------
 
     public void bookSlot(int scheduleId, int studentId, String purpose, ResultCallback<PostedSchedule> cb) {

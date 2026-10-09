@@ -101,9 +101,11 @@ public class FacultyHomeFragment extends Fragment {
                         String today = AppTime.todayIso();
                         int studentsToday = 0, open = 0, completed = 0;
                         for (PostedSchedule p : list) {
-                            if (p.isBooked()) {
+                            if (p.isAccepted()) {
                                 if (p.hasEnded()) completed++;
-                                if (today.equals(p.getDate())) studentsToday++;
+                                else if (today.equals(p.getDate())) studentsToday++;
+                            } else if (p.isBooked()) {
+                                // pending / declined requests are not counted here
                             } else if (!p.hasEnded()) {
                                 open++;
                             }

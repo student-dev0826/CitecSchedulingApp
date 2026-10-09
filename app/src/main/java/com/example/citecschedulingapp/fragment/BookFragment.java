@@ -387,6 +387,14 @@ public class BookFragment extends Fragment {
             return;
         }
 
+        long startMs = AppTime.slotStartMillis(requestedDate, requestedTime);
+        if (startMs > 0 && startMs <= System.currentTimeMillis()) {
+            Toast.makeText(requireContext(),
+                    "That time has already passed. Pick a later time slot or another date.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
         // Find target faculty ID
         int targetFacultyId = facultyList.get(0).getFacultyId();
         for (FacultyItem f : facultyList) {

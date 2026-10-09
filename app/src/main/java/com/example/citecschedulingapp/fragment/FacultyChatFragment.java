@@ -1,34 +1,45 @@
 package com.example.citecschedulingapp.fragment;
 
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.citecschedulingapp.ChatContactCard;
 import com.example.citecschedulingapp.ChatDetailActivity;
 import com.example.citecschedulingapp.ChatRepository;
 import com.example.citecschedulingapp.R;
 import com.example.citecschedulingapp.SessionManager;
-import com.example.citecschedulingapp.model.ChatMessage;
-import com.google.android.material.card.MaterialCardView;
+import com.example.citecschedulingapp.model.ChatConversation;
 
 import java.util.List;
 
+/** Faculty chat list: students who messaged, unread ones highlighted and first. */
 public class FacultyChatFragment extends Fragment {
 
-    private LinearLayout containerStudentContacts;
+    private static final long REFRESH_MS = 5000;
 
+    private LinearLayout containerStudentContacts;
     private SessionManager sessionManager;
     private ChatRepository chatRepository;
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable refreshTask = new Runnable() {
+        @Override public void run() {
+            refresh();
+            handler.postDelayed(this, REFRESH_MS);
+        }
+    };
+    private String lastSignature = "";
 
     @Nullable
     @Override
@@ -39,93 +50,79 @@ public class FacultyChatFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         if (getContext() != null) {
             sessionManager = new SessionManager(getContext());
             chatRepository = ChatRepository.getInstance(getContext());
         }
-
         containerStudentContacts = view.findViewById(R.id.containerStudentContacts);
-
-        loadStudentContacts();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        loadStudentContacts();
+        lastSignature = "";
+        handler.post(refreshTask);
     }
 
-    private void loadStudentContacts() {
-        if (containerStudentContacts == null || chatRepository == null) return;
+    @Override
+    public void onPause() {
+        super.onPause();
+        handler.removeCallbacks(refreshTask);
+    }
+
+    private String myId() {
+        return sessionManager != null ? "PROF-" + sessionManager.getUserId() : "";
+    }
+
+    private void refresh() {
+        if (chatRepository == null) return;
+        chatRepository.loadConversations(myId(), new ChatRepository.Result<List<ChatConversation>>() {
+            @Override public void onSuccess(List<ChatConversation> data) {
+                if (isAdded()) render(data);
+            }
+            @Override public void onError(String message) { }
+        });
+    }
+
+    private void render(List<ChatConversation> data) {
+        if (containerStudentContacts == null) return;
+
+        // Server already sorts by newest; pull unread ones to the top, keeping that order.
+        java.util.ArrayList<ChatConversation> list = new java.util.ArrayList<>();
+        if (data != null) {
+            for (ChatConversation c : data) if (c.getUnread() > 0) list.add(c);
+            for (ChatConversation c : data) if (c.getUnread() == 0) list.add(c);
+        }
+
+        StringBuilder sig = new StringBuilder();
+        for (ChatConversation c : list) sig.append(c.getContactId()).append(':').append(c.getUnread()).append(':').append(c.getLastId()).append(';');
+        if (sig.toString().equals(lastSignature)) return;
+        lastSignature = sig.toString();
 
         containerStudentContacts.removeAllViews();
 
-        String currentProfId = sessionManager != null ? "PROF-" + sessionManager.getUserId() : "PROF-01";
-
-        List<ChatRepository.ContactInfo> studentContacts = chatRepository.getRecentContactsForUser(currentProfId, true);
-
-        if (studentContacts.isEmpty()) {
-            studentContacts.add(new ChatRepository.ContactInfo("3331650", "Farancis Val", "Student", null));
-            studentContacts.add(new ChatRepository.ContactInfo("2026-001", "Juan Dela Cruz", "Student", null));
-            studentContacts.add(new ChatRepository.ContactInfo("2026-002", "Maria Clara", "Student", null));
+        if (list.isEmpty()) {
+            TextView tv = new TextView(requireContext());
+            tv.setText("No messages yet. Students who message you will appear here.");
+            tv.setTextColor(getResources().getColor(R.color.text_secondary));
+            containerStudentContacts.addView(tv);
+            return;
         }
 
-        for (ChatRepository.ContactInfo contact : studentContacts) {
-            String studentId = contact.contactId;
-            String studentName = contact.contactName != null && !contact.contactName.isEmpty() ? contact.contactName : "Student (" + studentId + ")";
-            ChatMessage lastMsg = contact.lastMessage != null ? contact.lastMessage : chatRepository.getLastMessage(currentProfId, studentId);
-            View card = createContactCardView(studentName, studentId, lastMsg);
-            containerStudentContacts.addView(card);
+        for (ChatConversation c : list) {
+            final String studentId = c.getContactId();
+            final String studentName = !c.getContactName().isEmpty() ? c.getContactName() : "Student (" + studentId + ")";
+            boolean mine = c.getLastSenderId().equalsIgnoreCase(myId());
+            String snippet = (mine ? "You: " : "") + c.getLastMessage();
+
+            containerStudentContacts.addView(ChatContactCard.build(requireContext(),
+                    studentName + " (" + studentId + ")", snippet, c.getLastTime(), c.getUnread(), v -> {
+                Intent intent = new Intent(requireContext(), ChatDetailActivity.class);
+                intent.putExtra("RECIPIENT_ID", studentId);
+                intent.putExtra("RECIPIENT_NAME", studentName);
+                intent.putExtra("RECIPIENT_ROLE", "Student");
+                startActivity(intent);
+            }));
         }
-    }
-
-    private View createContactCardView(String studentName, String studentId, ChatMessage lastMsg) {
-        MaterialCardView card = new MaterialCardView(requireContext());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.setMargins(0, 0, 0, 16);
-        card.setLayoutParams(params);
-        card.setCardElevation(2f);
-        card.setRadius(16f);
-        card.setStrokeColor(getResources().getColor(R.color.border_color));
-        card.setStrokeWidth(1);
-
-        RelativeLayout layout = new RelativeLayout(requireContext());
-        layout.setPadding(32, 28, 32, 28);
-
-        LinearLayout textLayout = new LinearLayout(requireContext());
-        textLayout.setOrientation(LinearLayout.VERTICAL);
-
-        TextView tvName = new TextView(requireContext());
-        tvName.setText(studentName + " (" + studentId + ")");
-        tvName.setTextSize(16f);
-        tvName.setTextColor(getResources().getColor(R.color.primary));
-        tvName.setTypeface(null, Typeface.BOLD);
-
-        TextView tvSnippet = new TextView(requireContext());
-        String snippet = lastMsg != null ? lastMsg.getMessageText() : "Tap to reply to student...";
-        tvSnippet.setText(snippet);
-        tvSnippet.setTextSize(13f);
-        tvSnippet.setTextColor(getResources().getColor(R.color.text_secondary));
-        tvSnippet.setPadding(0, 4, 0, 0);
-
-        textLayout.addView(tvName);
-        textLayout.addView(tvSnippet);
-
-        layout.addView(textLayout);
-        card.addView(layout);
-
-        card.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), ChatDetailActivity.class);
-            intent.putExtra("RECIPIENT_ID", studentId);
-            intent.putExtra("RECIPIENT_NAME", studentName);
-            intent.putExtra("RECIPIENT_ROLE", "Student");
-            startActivity(intent);
-        });
-
-        return card;
     }
 }
