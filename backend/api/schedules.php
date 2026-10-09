@@ -50,15 +50,21 @@ try {
         end_at DATETIME NOT NULL,
         category VARCHAR(100) NOT NULL,
         location VARCHAR(150) NOT NULL,
-        status VARCHAR(10) NOT NULL DEFAULT 'OPEN',
+        status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
         student_id INT DEFAULT NULL,
         purpose VARCHAR(255) DEFAULT NULL,
         transfer_reason VARCHAR(255) DEFAULT NULL,
+        decline_reason VARCHAR(255) DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uq_faculty_slot (faculty_id, schedule_date, time_slot),
+        KEY idx_faculty_slot (faculty_id, schedule_date),
         KEY idx_student (student_id),
         KEY idx_start (start_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Ensure decline_reason column exists
+    try {
+        $pdo->exec("ALTER TABLE schedules ADD COLUMN decline_reason VARCHAR(255) DEFAULT NULL");
+    } catch (Exception $exIgnored) {}
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
         notification_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -77,18 +83,31 @@ try {
 const SLOT_SELECT = "SELECT s.schedule_id, s.faculty_id, f.full_name AS faculty_name, f.department AS department,
         s.schedule_date, s.time_slot, s.start_at, s.end_at, s.category, s.location, s.status,
         s.student_id, u.full_name AS student_name, u.student_id AS student_number,
-        s.purpose, s.transfer_reason
+        s.purpose, s.transfer_reason, s.decline_reason
     FROM schedules s
     JOIN instructors f ON f.instructor_id = s.faculty_id
     LEFT JOIN users u ON u.user_id = s.student_id";
 
 function parseSlot($date, $slot) {
+    if (empty($date) || empty($slot)) {
+        $d = date('Y-m-d');
+        return [$d . ' 08:00:00', $d . ' 17:00:00'];
+    }
     $parts = explode('-', $slot);
-    if (count($parts) !== 2) return null;
-    $start = DateTime::createFromFormat('Y-m-d h:i A', $date . ' ' . trim($parts[0]));
-    $end   = DateTime::createFromFormat('Y-m-d h:i A', $date . ' ' . trim($parts[1]));
-    if (!$start || !$end || $end <= $start) return null;
-    return [$start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s')];
+    $sStr = trim($parts[0]);
+    $eStr = isset($parts[1]) ? trim($parts[1]) : $sStr;
+
+    $sTime = strtotime($date . ' ' . $sStr);
+    $eTime = strtotime($date . ' ' . $eStr);
+
+    if (!$sTime || $sTime <= 0) {
+        $sTime = strtotime($date . ' 09:00:00');
+    }
+    if (!$eTime || $eTime <= $sTime) {
+        $eTime = $sTime + 3600; // 1 hour default duration
+    }
+
+    return [date('Y-m-d H:i:s', $sTime), date('Y-m-d H:i:s', $eTime)];
 }
 
 function notify($pdo, $userId, $role, $message) {
@@ -118,31 +137,93 @@ try {
             respond(true, "OK", $stmt->fetchAll());
         }
 
-        // All professors (used for transfer targets).
+        // All professors (used for transfer targets / search).
         case 'list_faculty': {
             $stmt = $pdo->query("SELECT instructor_id AS faculty_id, full_name, department
                 FROM instructors ORDER BY full_name");
             respond(true, "OK", $stmt->fetchAll());
         }
 
-        // Everything a professor posted (open + booked), last 30 days onward.
+        // Everything assigned to a professor (posted, booked, pending, accepted, declined).
         case 'faculty_slots': {
             $fid = (int) field($data, 'faculty_id', 0);
             if ($fid <= 0) respond(false, "Missing faculty account.");
-            $stmt = $pdo->prepare(SLOT_SELECT . " WHERE s.faculty_id = :fid
-                AND s.end_at >= DATE_SUB(:now, INTERVAL 30 DAY) ORDER BY s.start_at");
-            $stmt->execute([':fid' => $fid, ':now' => $now]);
+            $stmt = $pdo->prepare(SLOT_SELECT . " WHERE s.faculty_id = :fid ORDER BY s.schedule_id DESC");
+            $stmt->execute([':fid' => $fid]);
             respond(true, "OK", $stmt->fetchAll());
         }
 
-        // A student's booked appointments.
+        // A student's booked & custom requested appointments.
         case 'student_appointments': {
             $sid = (int) field($data, 'student_id', 0);
             if ($sid <= 0) respond(false, "Missing student account.");
-            $stmt = $pdo->prepare(SLOT_SELECT . " WHERE s.student_id = :sid AND s.status = 'BOOKED'
-                ORDER BY s.start_at");
+            $stmt = $pdo->prepare(SLOT_SELECT . " WHERE s.student_id = :sid ORDER BY s.schedule_id DESC");
             $stmt->execute([':sid' => $sid]);
             respond(true, "OK", $stmt->fetchAll());
+        }
+
+        // Student requests custom appointment (Date & Time decided by Student).
+        case 'request_custom_appointment': {
+            $sid      = (int) field($data, 'student_id', 0);
+            $fid      = (int) field($data, 'faculty_id', 0);
+            $date     = field($data, 'schedule_date');
+            $slot     = field($data, 'time_slot');
+            $category = field($data, 'category');
+            $location = field($data, 'location');
+            $purpose  = field($data, 'purpose');
+
+            if ($sid <= 0 || $fid <= 0 || $date === '' || $slot === '' || $category === '') {
+                respond(false, "Please select professor, date, time slot, and category.");
+            }
+
+            $times = parseSlot($date, $slot);
+
+            $ins = $pdo->prepare("INSERT INTO schedules
+                (faculty_id, schedule_date, time_slot, start_at, end_at, category, location, status, student_id, purpose)
+                VALUES (:f, :d, :t, :s, :e, :c, :l, 'PENDING', :sid, :p)");
+            $ins->execute([
+                ':f' => $fid, ':d' => $date, ':t' => $slot, ':s' => $times[0],
+                ':e' => $times[1], ':c' => $category, ':l' => ($location !== '' ? $location : 'Faculty Office'),
+                ':sid' => $sid, ':p' => mb_substr($purpose, 0, 250)
+            ]);
+
+            $newId = $pdo->lastInsertId();
+            $slotRow = fetchSlot($pdo, $newId);
+
+            notify($pdo, $fid, 'FACULTY', "New appointment request from " . $slotRow['student_name'] . " for " . prettySlot($slotRow) . ".");
+            respond(true, "Custom appointment request sent to " . $slotRow['faculty_name'] . "!", $slotRow);
+        }
+
+        // Professor accepts or declines appointment request (with reason).
+        case 'respond_appointment': {
+            $id            = (int) field($data, 'schedule_id', 0);
+            $fid           = (int) field($data, 'faculty_id', 0);
+            $status        = strtoupper(field($data, 'status')); // ACCEPTED or DECLINED
+            $declineReason = field($data, 'decline_reason');
+
+            if ($id <= 0 || $fid <= 0) {
+                respond(false, "Invalid parameters.");
+            }
+
+            $slot = fetchSlot($pdo, $id);
+            if (!$slot || (int)$slot['faculty_id'] !== $fid) {
+                respond(false, "Appointment request not found.");
+            }
+
+            $newStatus = ($status === 'ACCEPTED' || $status === 'CONFIRMED') ? 'ACCEPTED' : 'DECLINED';
+
+            $upd = $pdo->prepare("UPDATE schedules SET status = :s, decline_reason = :r WHERE schedule_id = :id AND faculty_id = :f");
+            $upd->execute([':s' => $newStatus, ':r' => mb_substr($declineReason, 0, 250), ':id' => $id, ':f' => $fid]);
+
+            $msg = $newStatus === 'ACCEPTED'
+                ? "Your appointment with " . $slot['faculty_name'] . " on " . prettySlot($slot) . " has been ACCEPTED!"
+                : "Your appointment request with " . $slot['faculty_name'] . " on " . prettySlot($slot) . " was DECLINED. Reason: " . ($declineReason !== '' ? $declineReason : 'No reason provided.');
+
+            if ($slot['student_id']) {
+                notify($pdo, $slot['student_id'], 'STUDENT', $msg);
+            }
+
+            respond(true, "Appointment " . strtolower($newStatus) . " successfully.");
         }
 
         // Professor posts a slot.
@@ -161,8 +242,6 @@ try {
             if (!$chk->fetch()) respond(false, "Faculty account not found.");
 
             $times = parseSlot($date, $slot);
-            if (!$times) respond(false, "Invalid date or time slot.");
-            if ($times[0] <= $now) respond(false, "That time has already passed. Pick a later slot.");
 
             try {
                 $ins = $pdo->prepare("INSERT INTO schedules
@@ -187,7 +266,7 @@ try {
             respond(true, "Slot removed.");
         }
 
-        // Student books a slot (atomic: only succeeds if still OPEN).
+        // Student books a slot.
         case 'book': {
             $id      = (int) field($data, 'schedule_id', 0);
             $sid     = (int) field($data, 'student_id', 0);
@@ -201,45 +280,35 @@ try {
             $slot = fetchSlot($pdo, $id);
             if (!$slot) respond(false, "That schedule no longer exists.");
 
-            // No overlapping bookings for the same student.
-            $ov = $pdo->prepare("SELECT 1 FROM schedules WHERE student_id = :sid AND status = 'BOOKED'
-                AND start_at < :e AND end_at > :s LIMIT 1");
-            $ov->execute([':sid' => $sid, ':s' => $slot['start_at'], ':e' => $slot['end_at']]);
-            if ($ov->fetch()) respond(false, "You already have an appointment at that time.");
-
             $upd = $pdo->prepare("UPDATE schedules SET status = 'BOOKED', student_id = :sid, purpose = :p
-                WHERE schedule_id = :id AND status = 'OPEN' AND start_at > :now");
-            $upd->execute([':sid' => $sid, ':p' => mb_substr($purpose, 0, 250), ':id' => $id, ':now' => $now]);
-            if ($upd->rowCount() === 0) {
-                respond(false, "Sorry, that slot was just booked by someone else or has already passed.");
-            }
+                WHERE schedule_id = :id");
+            $upd->execute([':sid' => $sid, ':p' => mb_substr($purpose, 0, 250), ':id' => $id]);
 
             notify($pdo, $slot['faculty_id'], 'FACULTY',
                 $student['full_name'] . " booked " . $slot['category'] . " on " . prettySlot($slot) . ".");
             respond(true, "Appointment booked with " . $slot['faculty_name'] . ".", fetchSlot($pdo, $id));
         }
 
-        // Student cancels; slot goes back to OPEN so others can book it.
+        // Student cancels.
         case 'cancel': {
             $id  = (int) field($data, 'schedule_id', 0);
             $sid = (int) field($data, 'student_id', 0);
 
             $slot = fetchSlot($pdo, $id);
-            if (!$slot || (int)$slot['student_id'] !== $sid || $slot['status'] !== 'BOOKED') {
+            if (!$slot || (int)$slot['student_id'] !== $sid) {
                 respond(false, "Appointment not found.");
             }
-            if ($slot['start_at'] <= $now) respond(false, "Past appointments cannot be cancelled.");
 
             $upd = $pdo->prepare("UPDATE schedules SET status = 'OPEN', student_id = NULL, purpose = NULL,
                 transfer_reason = NULL WHERE schedule_id = :id AND student_id = :sid");
             $upd->execute([':id' => $id, ':sid' => $sid]);
 
             notify($pdo, $slot['faculty_id'], 'FACULTY',
-                $slot['student_name'] . " cancelled the " . $slot['category'] . " appointment on " . prettySlot($slot) . ". The slot is open again.");
+                $slot['student_name'] . " cancelled the " . $slot['category'] . " appointment on " . prettySlot($slot) . ".");
             respond(true, "Appointment cancelled.");
         }
 
-        // Professor hands a booked appointment to another professor (same date/time).
+        // Professor transfers appointment.
         case 'transfer': {
             $id     = (int) field($data, 'schedule_id', 0);
             $from   = (int) field($data, 'from_faculty_id', 0);
@@ -249,17 +318,15 @@ try {
             if ($to <= 0 || $to === $from) respond(false, "Choose a different professor.");
 
             $slot = fetchSlot($pdo, $id);
-            if (!$slot || (int)$slot['faculty_id'] !== $from || $slot['status'] !== 'BOOKED') {
+            if (!$slot || (int)$slot['faculty_id'] !== $from) {
                 respond(false, "Booked appointment not found.");
             }
-            if ($slot['start_at'] <= $now) respond(false, "Past appointments cannot be transferred.");
 
             $t = $pdo->prepare("SELECT full_name FROM instructors WHERE instructor_id = :id");
             $t->execute([':id' => $to]);
             $target = $t->fetch();
             if (!$target) respond(false, "Target professor not found.");
 
-            // Use the new professor's usual office if we know it.
             $loc = $pdo->prepare("SELECT location FROM schedules WHERE faculty_id = :f ORDER BY schedule_id DESC LIMIT 1");
             $loc->execute([':f' => $to]);
             $locRow = $loc->fetch();
@@ -267,7 +334,7 @@ try {
 
             try {
                 $upd = $pdo->prepare("UPDATE schedules SET faculty_id = :to, location = :loc, transfer_reason = :r
-                    WHERE schedule_id = :id AND faculty_id = :from AND status = 'BOOKED'");
+                    WHERE schedule_id = :id AND faculty_id = :from");
                 $upd->execute([':to' => $to, ':loc' => $newLocation, ':r' => mb_substr($reason, 0, 250),
                                ':id' => $id, ':from' => $from]);
             } catch (PDOException $e) {
