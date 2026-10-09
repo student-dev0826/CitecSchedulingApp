@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
+import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
@@ -105,6 +106,16 @@ public class ScheduleRepository {
         enqueue(api.scheduleSimple(m), cb);
     }
 
+    public void respondAppointment(int scheduleId, int facultyId, String status, String declineReason, ResultCallback<Object> cb) {
+        if (badId(facultyId, cb)) return;
+        Map<String, String> m = req("respond_appointment");
+        m.put("schedule_id", String.valueOf(scheduleId));
+        m.put("faculty_id", String.valueOf(facultyId));
+        m.put("status", status);
+        m.put("decline_reason", declineReason != null ? declineReason : "");
+        enqueue(api.scheduleSimple(m), cb);
+    }
+
     // ---------- student actions ----------
 
     public void bookSlot(int scheduleId, int studentId, String purpose, ResultCallback<PostedSchedule> cb) {
@@ -112,6 +123,19 @@ public class ScheduleRepository {
         Map<String, String> m = req("book");
         m.put("schedule_id", String.valueOf(scheduleId));
         m.put("student_id", String.valueOf(studentId));
+        m.put("purpose", purpose);
+        enqueue(api.scheduleOne(m), cb);
+    }
+
+    public void requestCustomAppointment(int studentId, int facultyId, String date, String timeSlot, String category, String location, String purpose, ResultCallback<PostedSchedule> cb) {
+        if (badId(studentId, cb)) return;
+        Map<String, String> m = req("request_custom_appointment");
+        m.put("student_id", String.valueOf(studentId));
+        m.put("faculty_id", String.valueOf(facultyId));
+        m.put("schedule_date", date);
+        m.put("time_slot", timeSlot);
+        m.put("category", category);
+        m.put("location", location);
         m.put("purpose", purpose);
         enqueue(api.scheduleOne(m), cb);
     }
@@ -157,7 +181,7 @@ public class ScheduleRepository {
     }
 
     private <T> void enqueue(Call<ApiResult<T>> call, final ResultCallback<T> cb) {
-        call.enqueue(new retrofit2.Callback<ApiResult<T>>() {
+        call.enqueue(new Callback<ApiResult<T>>() {
             @Override
             public void onResponse(@NonNull Call<ApiResult<T>> c, @NonNull Response<ApiResult<T>> response) {
                 if (cb == null) return;

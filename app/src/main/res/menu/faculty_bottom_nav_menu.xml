@@ -17,6 +17,10 @@
         android:icon="@drawable/ic_swap"
         android:title="@string/nav_faculty_transfer" />
     <item
+        android:id="@+id/nav_faculty_chat"
+        android:icon="@drawable/ic_chat"
+        android:title="@string/nav_faculty_chat" />
+    <item
         android:id="@+id/nav_faculty_profile"
         android:icon="@drawable/ic_profile"
         android:title="@string/nav_profile" />

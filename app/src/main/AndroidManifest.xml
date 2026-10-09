@@ -49,6 +49,11 @@
             android:name=".FacultyHomeActivity"
             android:exported="false" />
 
+        <!-- Dedicated Direct Chat Activity -->
+        <activity
+            android:name=".ChatDetailActivity"
+            android:exported="false" />
+
         <!-- Shares the downloaded update APK with the system installer -->
         <provider
             android:name="androidx.core.content.FileProvider"

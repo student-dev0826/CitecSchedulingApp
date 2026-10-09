@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import com.example.citecschedulingapp.fragment.FacultyAvailabilityFragment;
+import com.example.citecschedulingapp.fragment.FacultyChatFragment;
 import com.example.citecschedulingapp.fragment.FacultyHomeFragment;
 import com.example.citecschedulingapp.fragment.FacultyScheduleFragment;
 import com.example.citecschedulingapp.fragment.FacultyTransferFragment;
@@ -76,8 +77,8 @@ public class FacultyHomeActivity extends AppCompatActivity {
                 fragment = new FacultyScheduleFragment();
             } else if (itemId == R.id.nav_faculty_availability) {
                 fragment = new FacultyAvailabilityFragment();
-            } else if (itemId == R.id.nav_faculty_transfer) {
-                fragment = new FacultyTransferFragment();
+            } else if (itemId == R.id.nav_faculty_chat) {
+                fragment = new FacultyChatFragment();
             } else if (itemId == R.id.nav_faculty_profile) {
                 fragment = new ProfileFragment();
             }
