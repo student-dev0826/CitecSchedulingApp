@@ -181,6 +181,7 @@ public class LoginActivity extends AppCompatActivity {
                                         assignedRole,
                                         rememberMe
                                 );
+                                sessionManager.setAuthToken(loginResponse.getAuthToken());
 
                                 Toast.makeText(
                                         LoginActivity.this,

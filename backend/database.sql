@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS instructors (
 
 -- Consultation slots posted by faculty and booked by students.
 -- (schedules.php also creates these automatically on first use.)
-CREATE TABLE IF NOT EXISTS schedules (
+CREATE TABLE IF NOT EXISTS cs_schedules (
     schedule_id INT AUTO_INCREMENT PRIMARY KEY,
     faculty_id INT NOT NULL,
     schedule_date DATE NOT NULL,
@@ -45,13 +45,16 @@ CREATE TABLE IF NOT EXISTS schedules (
     transfer_reason VARCHAR(255) DEFAULT NULL,
     decline_reason VARCHAR(255) DEFAULT NULL,
     cancel_reason VARCHAR(255) DEFAULT NULL,
+    is_custom TINYINT(1) NOT NULL DEFAULT 0,
+    recurrence_id INT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_faculty_slot (faculty_id, schedule_date, time_slot),
+    KEY idx_faculty_slot (faculty_id, schedule_date, time_slot),
     KEY idx_student (student_id),
-    KEY idx_start (start_at)
+    KEY idx_start (start_at),
+    KEY idx_recurrence (recurrence_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE IF NOT EXISTS cs_notifications (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     user_role VARCHAR(10) NOT NULL,
@@ -79,3 +82,28 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 -- Upgrade for existing installs (schedules.php also adds this automatically):
 -- ALTER TABLE schedules ADD COLUMN cancel_reason VARCHAR(255) DEFAULT NULL;
+
+-- The API uses cs_ table names. Existing installs are upgraded by schedules.php.
+CREATE TABLE IF NOT EXISTS cs_recurring_availability (
+    recurrence_id INT AUTO_INCREMENT PRIMARY KEY,
+    faculty_id INT NOT NULL,
+    weekday TINYINT NOT NULL,
+    start_time CHAR(5) NOT NULL,
+    end_time CHAR(5) NOT NULL,
+    date_from DATE NOT NULL,
+    date_to DATE NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    location VARCHAR(150) NOT NULL,
+    active TINYINT NOT NULL DEFAULT 1,
+    version INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_owner (faculty_id, active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cs_auth_sessions (
+    token_hash CHAR(64) PRIMARY KEY,
+    user_id INT NOT NULL,
+    role VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    KEY idx_expiry (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

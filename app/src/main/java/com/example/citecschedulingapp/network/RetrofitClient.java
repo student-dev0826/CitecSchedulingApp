@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     private static final String BASE_URL =
-            "https://citecscheduling.x10.mx/api/";
+            com.example.citecschedulingapp.BuildConfig.API_BASE_URL;
 
     private static Retrofit retrofit;
 

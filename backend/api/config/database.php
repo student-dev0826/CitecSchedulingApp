@@ -8,6 +8,7 @@ define('DB_HOST', getenv('DB_HOST') ? getenv('DB_HOST') : 'localhost');
 define('DB_NAME', getenv('DB_NAME') ? getenv('DB_NAME') : 'citec_scheduling');
 define('DB_USER', getenv('DB_USER') ? getenv('DB_USER') : 'root');
 define('DB_PASSWORD', getenv('DB_PASSWORD') ? getenv('DB_PASSWORD') : '');
+define('DB_PORT', getenv('DB_PORT') ? getenv('DB_PORT') : '3306');
 
 function getDatabaseConnection() {
     $options = [
@@ -24,13 +25,13 @@ function getDatabaseConnection() {
 
     foreach ($configs as $config) {
         try {
-            $dsn = "mysql:host=" . $config['host'] . ";dbname=" . $config['name'] . ";charset=utf8mb4";
+            $dsn = "mysql:host=" . $config['host'] . ";port=" . DB_PORT . ";dbname=" . $config['name'] . ";charset=utf8mb4";
             return new PDO($dsn, $config['user'], $config['pass'], $options);
         } catch (PDOException $e) {
             // Attempt creating database locally if missing
             if (($e->getCode() == 1049 || strpos($e->getMessage(), 'Unknown database') !== false) && $config['user'] === 'root') {
                 try {
-                    $rootDsn = "mysql:host=" . $config['host'] . ";charset=utf8mb4";
+                    $rootDsn = "mysql:host=" . $config['host'] . ";port=" . DB_PORT . ";charset=utf8mb4";
                     $pdoRoot = new PDO($rootDsn, $config['user'], $config['pass'], $options);
                     $pdoRoot->exec("CREATE DATABASE IF NOT EXISTS `" . $config['name'] . "` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                     return new PDO($dsn, $config['user'], $config['pass'], $options);

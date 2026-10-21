@@ -66,6 +66,8 @@ public class FacultyAvailabilityFragment extends Fragment {
 
         sessionManager = new SessionManager(requireContext());
         repository = ScheduleRepository.getInstance(requireContext());
+        view.findViewById(R.id.btnWeeklyAvailability).setOnClickListener(v ->
+                startActivity(new android.content.Intent(requireContext(), com.example.citecschedulingapp.WeeklyAvailabilityActivity.class)));
 
         tilPostDate = view.findViewById(R.id.tilPostDate);
         etPostDate = view.findViewById(R.id.etPostDate);

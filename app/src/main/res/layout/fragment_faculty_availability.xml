@@ -31,6 +31,14 @@
             android:textSize="14sp" />
 
         <!-- New Schedule Form Card -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnWeeklyAvailability"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginBottom="16dp"
+            android:text="Weekly schedules &amp; calendar" />
+
+        <!-- New Schedule Form Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -13,6 +13,8 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 
 // All slot times are Philippine time, matching the app.
 date_default_timezone_set('Asia/Manila');
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/recurrence.php';
 
 // Uses db.php (provides $pdo) when present; otherwise the project's config/database.php.
 if (file_exists(__DIR__ . '/db.php')) {
@@ -91,6 +93,8 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         KEY idx_user (user_id, user_role)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    cs_auth_schema($pdo);
+    rec_schema($pdo);
 } catch (Throwable $e) {
     error_log("schedules.php: " . $e->getMessage());
     sch_respond(false, "Could not prepare database tables.");
@@ -134,7 +138,7 @@ define('U_NAME', sch_nameExpr($pdo, 'users', 'u'));
 define('SLOT_SELECT', "SELECT s.schedule_id, s.faculty_id, " . F_NAME . " AS faculty_name, f.department AS department,
         s.schedule_date, s.time_slot, s.start_at, s.end_at, s.category, s.location, s.status,
         s.student_id, " . U_NAME . " AS student_name, u.student_id AS student_number,
-        s.purpose, s.transfer_reason, "
+        s.purpose, s.transfer_reason, s.recurrence_id, "
         . ($hasDecline ? "s.decline_reason" : "NULL") . " AS decline_reason, "
         . ($hasCancel ? "s.cancel_reason" : "NULL") . " AS cancel_reason, "
         . ($hasCustom ? "s.is_custom" : "0") . " AS is_custom
@@ -173,6 +177,23 @@ function sch_release($pdo, $slotRow) {
         $q->execute([':id' => $slotRow['schedule_id']]);
         return;
     }
+    if (!empty($slotRow['recurrence_id'])) {
+        $q = $pdo->prepare('SELECT * FROM cs_recurring_availability WHERE recurrence_id = ? AND active = 1 AND faculty_id = ?');
+        $q->execute([$slotRow['recurrence_id'], $slotRow['faculty_id']]);
+        $rule = $q->fetch();
+        // An old booking must not reopen availability removed by editing/deleting its series.
+        if (!$rule || $slotRow['schedule_date'] < $rule['date_from'] || $slotRow['schedule_date'] > $rule['date_to']
+            || (int)date('N', strtotime($slotRow['schedule_date'])) !== (int)$rule['weekday']
+            || substr($slotRow['start_at'], 11, 5) !== $rule['start_time'] || substr($slotRow['end_at'], 11, 5) !== $rule['end_time']) {
+            $q = $pdo->prepare('DELETE FROM cs_schedules WHERE schedule_id = ?');
+            $q->execute([$slotRow['schedule_id']]); return;
+        }
+    }
+    if (rec_overlap($pdo, (int)$slotRow['faculty_id'], $slotRow['start_at'], $slotRow['end_at'], (int)$slotRow['schedule_id'])) {
+        // Dismissing old declined history cannot reopen a slot over newer availability.
+        $q = $pdo->prepare('DELETE FROM cs_schedules WHERE schedule_id = ?');
+        $q->execute([$slotRow['schedule_id']]); return;
+    }
     $q = $pdo->prepare("UPDATE cs_schedules SET status = 'OPEN', student_id = NULL, purpose = NULL,
         transfer_reason = NULL"
         . ($GLOBALS['hasDecline'] ? ", decline_reason = NULL" : "")
@@ -198,7 +219,30 @@ try {
 
 // ---------- actions ----------
 try {
+    // All schedule writers share a connection-scoped lock, including legacy actions.
+    // This closes the check/insert race between recurring generation and manual bookings.
+    $reads = ['list_open', 'list_faculty', 'faculty_slots', 'student_appointments', 'list_notifications', 'recurring_list', 'recurring_calendar'];
+    $actor = null;
+    if (!in_array($action, ['list_open', 'list_faculty'], true)) $actor = cs_authorize($pdo, $data, $action);
+    if (!in_array($action, $reads, true)) {
+        $lock = $pdo->query("SELECT GET_LOCK('cs_schedule_mutations', 15)")->fetchColumn();
+        if ((int)$lock !== 1) sch_respond(false, 'Schedules are busy. Please try again.');
+        register_shutdown_function(function () use ($pdo) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $pdo->query("SELECT RELEASE_LOCK('cs_schedule_mutations')");
+        });
+    }
+    if (strpos($action, 'recurring_') === 0) {
+        $result = rec_handle($pdo, $data, $actor, $action);
+        sch_respond(true, $result['message'], $result['data']);
+    }
     switch ($action) {
+
+        case 'auth_logout': {
+            $q = $pdo->prepare('DELETE FROM cs_auth_sessions WHERE token_hash = ?');
+            $q->execute([hash('sha256', sch_field($data, 'auth_token'))]);
+            sch_respond(true, 'Scheduling session closed.');
+        }
 
         // Open, future slots students can book.
         case 'list_open': {
@@ -253,6 +297,7 @@ try {
             $times = sch_parseSlot($date, $slot);
             if (!$times) sch_respond(false, "Invalid date or time slot.");
             if ($times[0] <= $now) sch_respond(false, "That time has already passed. Pick a later slot.");
+            if (rec_overlap($pdo, $fid, $times[0], $times[1])) sch_respond(false, 'That time overlaps existing availability or an appointment.');
 
             try {
                 $ins = $pdo->prepare("INSERT INTO cs_schedules
@@ -326,6 +371,7 @@ try {
             $times = sch_parseSlot($date, $slotTxt);
             if (!$times) sch_respond(false, "Invalid date or time slot.");
             if ($times[0] <= $now) sch_respond(false, "Please choose a time in the future.");
+            if (rec_overlap($pdo, $fid, $times[0], $times[1])) sch_respond(false, 'That time overlaps existing availability or an appointment. Choose a posted slot or a different time.');
 
             $chk = $pdo->prepare("SELECT 1 FROM instructors WHERE instructor_id = :id");
             $chk->execute([':id' => $fid]);
@@ -484,7 +530,7 @@ try {
 
             if ($accept) {
                 $clash = $pdo->prepare("SELECT 1 FROM cs_schedules
-                    WHERE faculty_id = :f AND schedule_id <> :id AND status IN ('BOOKED','ACCEPTED')
+                    WHERE faculty_id = :f AND schedule_id <> :id AND status NOT IN ('CANCELLED','DECLINED')
                       AND start_at < :e AND end_at > :s LIMIT 1");
                 $clash->execute([':f' => $fid, ':id' => $id, ':s' => $slot['start_at'], ':e' => $slot['end_at']]);
                 if ($clash->fetch()) {
@@ -524,6 +570,7 @@ try {
                 sch_respond(false, "Request not found. The student may have cancelled it.");
             }
             if ($slot['start_at'] <= $now) sch_respond(false, "That time has already passed.");
+            if (rec_overlap($pdo, $fid, $slot['start_at'], $slot['end_at'], $id)) sch_respond(false, 'Another schedule overlaps this appointment.');
             $upd = $pdo->prepare("UPDATE cs_schedules SET status = 'BOOKED'
                 WHERE schedule_id = :id AND faculty_id = :f AND status = 'PENDING'");
             $upd->execute([':id' => $id, ':f' => $fid]);
@@ -569,6 +616,7 @@ try {
             $t->execute([':id' => $to]);
             $target = $t->fetch();
             if (!$target) sch_respond(false, "Target professor not found.");
+            if (rec_overlap($pdo, $to, $slot['start_at'], $slot['end_at'])) sch_respond(false, 'The target professor has overlapping availability or an appointment.');
 
             $loc = $pdo->prepare("SELECT location FROM cs_schedules WHERE faculty_id = :f ORDER BY schedule_id DESC LIMIT 1");
             $loc->execute([':f' => $to]);
@@ -576,7 +624,7 @@ try {
             $newLocation = $locRow ? $locRow['location'] : $slot['location'];
 
             try {
-                $upd = $pdo->prepare("UPDATE cs_schedules SET faculty_id = :to, location = :loc, transfer_reason = :r
+                $upd = $pdo->prepare("UPDATE cs_schedules SET faculty_id = :to, location = :loc, transfer_reason = :r, recurrence_id = NULL
                     WHERE schedule_id = :id AND faculty_id = :from AND status IN ('BOOKED','ACCEPTED')");
                 $upd->execute([':to' => $to, ':loc' => $newLocation, ':r' => mb_substr($reason, 0, 250),
                                ':id' => $id, ':from' => $from]);
@@ -616,6 +664,8 @@ try {
             sch_respond(false, "Unknown action.");
     }
 } catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    if ($e instanceof InvalidArgumentException) sch_respond(false, $e->getMessage());
     error_log("schedules.php: " . $e->getMessage());
     sch_respond(false, "Server database error. Please try again.");
 }

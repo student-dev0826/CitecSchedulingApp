@@ -34,6 +34,7 @@ public class SessionManager {
         editor.putString(KEY_FULL_NAME, user.getFullName());
         editor.putString(KEY_EMAIL, user.getEmail());
         editor.putString(KEY_ROLE, user.getRole());
+        editor.remove("authToken");
         editor.apply();
     }
 
@@ -49,6 +50,9 @@ public class SessionManager {
     public boolean isLoggedIn() {
         return sharedPreferences.getBoolean(KEY_IS_LOGGED_IN, false);
     }
+
+    public void setAuthToken(String token) { sharedPreferences.edit().putString("authToken", token).apply(); }
+    public String getAuthToken() { return sharedPreferences.getString("authToken", ""); }
 
     public boolean isRemembered() {
         return sharedPreferences.getBoolean(KEY_IS_REMEMBERED, false) && isLoggedIn();
@@ -83,6 +87,17 @@ public class SessionManager {
     }
 
     public void logout() {
+        String token = getAuthToken();
+        if (!token.isEmpty()) {
+            java.util.Map<String, String> fields = new java.util.HashMap<>();
+            fields.put("action", "auth_logout"); fields.put("auth_token", token);
+            com.example.citecschedulingapp.network.RetrofitClient.getApiService().scheduleSimple(fields)
+                    .enqueue(new retrofit2.Callback<com.example.citecschedulingapp.model.ApiResult<Object>>() {
+                        @Override public void onResponse(retrofit2.Call<com.example.citecschedulingapp.model.ApiResult<Object>> call,
+                                retrofit2.Response<com.example.citecschedulingapp.model.ApiResult<Object>> response) { }
+                        @Override public void onFailure(retrofit2.Call<com.example.citecschedulingapp.model.ApiResult<Object>> call, Throwable t) { }
+                    });
+        }
         editor.clear();
         editor.apply();
     }

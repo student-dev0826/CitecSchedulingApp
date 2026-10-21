@@ -10,6 +10,7 @@ import com.example.citecschedulingapp.model.ChatMessage;
 import com.example.citecschedulingapp.model.FacultyItem;
 import com.example.citecschedulingapp.model.NotificationItem;
 import com.example.citecschedulingapp.model.PostedSchedule;
+import com.example.citecschedulingapp.model.RecurringAvailability;
 
 import java.util.List;
 import java.util.Map;
@@ -127,6 +128,10 @@ public interface ApiService {
     @FormUrlEncoded
     @POST("schedules.php")
     Call<ApiResult<Object>> scheduleSimple(@FieldMap Map<String, String> fields);
+
+    @FormUrlEncoded
+    @POST("schedules.php")
+    Call<ApiResult<List<RecurringAvailability>>> recurringList(@FieldMap Map<String, String> fields);
 
     @FormUrlEncoded
     @POST("schedules.php")

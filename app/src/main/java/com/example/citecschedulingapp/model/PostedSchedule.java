@@ -5,6 +5,8 @@ import com.google.gson.annotations.SerializedName;
 
 /** One consultation slot as stored on the server. */
 public class PostedSchedule {
+    @SerializedName("recurrence_id") private Integer recurrenceId;
+    public int getRecurrenceId() { return recurrenceId == null ? 0 : recurrenceId; }
 
     @SerializedName("schedule_id")
     private int id;

@@ -9,6 +9,7 @@ header("Access-Control-Allow-Methods: POST, GET");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/auth.php';
 
 // Allow GET for API status check
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -72,6 +73,7 @@ try {
                 echo json_encode([
                     "success" => true,
                     "message" => "Faculty login successful.",
+                    "auth_token" => cs_issue_token($pdo, (int)$inst[$pkCol], 'FACULTY'),
                     "user" => [
                         "user_id"    => isset($inst[$pkCol]) ? (int)$inst[$pkCol] : (isset($inst['user_id']) ? (int)$inst['user_id'] : 1),
                         "student_id" => isset($inst[$idCol]) ? $inst[$idCol] : $identifier,
@@ -111,6 +113,7 @@ try {
                 echo json_encode([
                     "success" => true,
                     "message" => "Student login successful.",
+                    "auth_token" => cs_issue_token($pdo, (int)$usr[$pkCol], 'STUDENT'),
                     "user" => [
                         "user_id"    => isset($usr[$pkCol]) ? (int)$usr[$pkCol] : 1,
                         "student_id" => isset($usr[$idCol]) ? $usr[$idCol] : $identifier,

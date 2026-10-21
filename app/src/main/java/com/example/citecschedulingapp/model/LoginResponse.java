@@ -3,6 +3,11 @@ package com.example.citecschedulingapp.model;
 import com.google.gson.annotations.SerializedName;
 
 public class LoginResponse {
+    @SerializedName("auth_token")
+    private String authToken;
+
+    public String getAuthToken() { return authToken != null ? authToken : ""; }
+
     @SerializedName("success")
     private boolean success;
 

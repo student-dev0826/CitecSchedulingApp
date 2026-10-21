@@ -33,6 +33,9 @@
         </activity>
 
         <!-- Register Activity -->
+        <activity android:name=".WeeklyAvailabilityActivity" android:exported="false" />
+
+        <!-- Register Activity -->
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />

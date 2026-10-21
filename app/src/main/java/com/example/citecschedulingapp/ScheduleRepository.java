@@ -8,6 +8,7 @@ import com.example.citecschedulingapp.model.ApiResult;
 import com.example.citecschedulingapp.model.FacultyItem;
 import com.example.citecschedulingapp.model.NotificationItem;
 import com.example.citecschedulingapp.model.PostedSchedule;
+import com.example.citecschedulingapp.model.RecurringAvailability;
 import com.example.citecschedulingapp.network.ApiService;
 import com.example.citecschedulingapp.network.RetrofitClient;
 
@@ -37,19 +38,48 @@ public class ScheduleRepository {
     private static ScheduleRepository instance;
 
     private final ApiService api;
+    private final SessionManager session;
 
-    private ScheduleRepository() {
+    private ScheduleRepository(Context context) {
         api = RetrofitClient.getApiService();
+        session = new SessionManager(context.getApplicationContext());
     }
 
     public static synchronized ScheduleRepository getInstance(Context context) {
         if (instance == null) {
-            instance = new ScheduleRepository();
+            instance = new ScheduleRepository(context);
         }
         return instance;
     }
 
     // ---------- reads ----------
+
+    public void loadRecurring(ResultCallback<List<RecurringAvailability>> cb) {
+        enqueue(api.recurringList(req("recurring_list")), cb);
+    }
+
+    public void loadCalendar(String month, ResultCallback<List<PostedSchedule>> cb) {
+        Map<String, String> m = req("recurring_calendar");
+        m.put("month", month);
+        enqueue(api.scheduleList(m), cb);
+    }
+
+    public void saveRecurring(RecurringAvailability rule, ResultCallback<Object> cb) {
+        Map<String, String> m = req("recurring_save");
+        m.put("recurrence_id", String.valueOf(rule.id));
+        m.put("version", String.valueOf(rule.version));
+        m.put("weekday", String.valueOf(rule.weekday));
+        m.put("start_time", rule.startTime); m.put("end_time", rule.endTime);
+        m.put("date_from", rule.dateFrom); m.put("date_to", rule.dateTo);
+        m.put("category", rule.category); m.put("location", rule.location);
+        enqueue(api.scheduleSimple(m), cb);
+    }
+
+    public void deleteRecurring(RecurringAvailability rule, ResultCallback<Object> cb) {
+        Map<String, String> m = req("recurring_delete");
+        m.put("recurrence_id", String.valueOf(rule.id)); m.put("version", String.valueOf(rule.version));
+        enqueue(api.scheduleSimple(m), cb);
+    }
 
     public void loadOpenSlots(ResultCallback<List<PostedSchedule>> cb) {
         enqueue(api.scheduleList(req("list_open")), cb);
@@ -186,6 +216,7 @@ public class ScheduleRepository {
     private Map<String, String> req(String action) {
         Map<String, String> m = new HashMap<>();
         m.put("action", action);
+        m.put("auth_token", session.getAuthToken());
         return m;
     }
 

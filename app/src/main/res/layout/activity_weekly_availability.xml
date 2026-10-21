@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/bg_light" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnWeeklyBack"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content" android:layout_height="48dp" android:text="Back to availability" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Weekly availability" android:textSize="24sp" android:textStyle="bold" android:textColor="@color/primary" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Set your week once. Available dates appear automatically in your calendar. All times are Philippine time."
+            android:textSize="14sp" android:textColor="@color/text_secondary" android:layout_marginTop="6dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginTop="16dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnPreviousMonth"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="64dp" android:layout_height="48dp" android:text="‹" android:contentDescription="Previous month" />
+            <TextView android:id="@+id/tvAvailabilityMonth" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:gravity="center" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/primary" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnNextMonth"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_width="64dp" android:layout_height="48dp" android:text="›" android:contentDescription="Next month" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+            android:text="Green: available  •  Amber: appointment  •  Tap a date for times" android:textSize="12sp" android:textColor="@color/text_secondary" />
+        <GridLayout android:id="@+id/gridAvailabilityMonth" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:columnCount="7" android:layout_marginTop="12dp" />
+        <TextView android:id="@+id/tvWeeklyStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite" android:textColor="@color/text_secondary" android:layout_marginTop="12dp" />
+        <TextView android:id="@+id/tvAvailabilityDate" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/primary" />
+        <LinearLayout android:id="@+id/containerCalendarSlots" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnAddWeekly"
+            android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="20dp" android:text="Add weekly schedule" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
+            android:text="Your recurring schedules" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/primary" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
+            android:text="Add a separate schedule for each day or time range. Edits affect future unbooked dates; existing appointments stay unchanged."
+            android:textSize="13sp" android:textColor="@color/text_secondary" />
+        <LinearLayout android:id="@+id/containerRecurringRules" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>
