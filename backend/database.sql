@@ -107,3 +107,10 @@ CREATE TABLE IF NOT EXISTS cs_auth_sessions (
     expires_at DATETIME NOT NULL,
     KEY idx_expiry (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Removal is private to the authenticated participant; the original message is retained.
+CREATE TABLE IF NOT EXISTS chat_message_hidden (
+    user_id VARCHAR(50) NOT NULL,
+    message_id INT NOT NULL,
+    PRIMARY KEY (user_id, message_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -12,8 +12,9 @@ public class RetrofitClient {
             com.example.citecschedulingapp.BuildConfig.API_BASE_URL;
 
     private static Retrofit retrofit;
+    private static ApiService api;
 
-    public static Retrofit getRetrofitInstance() {
+    public static synchronized Retrofit getRetrofitInstance() {
         if (retrofit == null) {
             // Free hosting can be slow to wake up, so allow more than the 10s default.
             OkHttpClient client = new OkHttpClient.Builder()
@@ -32,7 +33,8 @@ public class RetrofitClient {
         return retrofit;
     }
 
-    public static ApiService getApiService() {
-        return getRetrofitInstance().create(ApiService.class);
+    public static synchronized ApiService getApiService() {
+        if (api == null) api = getRetrofitInstance().create(ApiService.class);
+        return api;
     }
 }

@@ -112,8 +112,9 @@ public class AppointmentsFragment extends Fragment {
     }
 
     private void applyStyle(MaterialButton b, boolean selected, int primary) {
-        b.setBackgroundTintList(ColorStateList.valueOf(selected ? primary : Color.TRANSPARENT));
-        b.setTextColor(selected ? Color.WHITE : primary);
+        b.setBackgroundTintList(ColorStateList.valueOf(requireContext().getColor(selected ? R.color.brand_yellow : R.color.brand_ink)));
+        b.setTextColor(requireContext().getColor(selected ? R.color.brand_ink : R.color.white));
+        b.setStrokeWidth(0);
     }
 
     private void render() {
@@ -149,6 +150,8 @@ public class AppointmentsFragment extends Fragment {
     private View buildCard(final PostedSchedule p, boolean ended) {
         Context c = requireContext();
         MaterialCardView card = UiUtil.card(c);
+        card.setCardBackgroundColor(c.getColor(p.isPending() ? R.color.primary : R.color.brand_ink));
+        card.setStrokeWidth(0);
         LinearLayout col = UiUtil.column(c);
 
         boolean isPending = p.isPending();
@@ -172,35 +175,49 @@ public class AppointmentsFragment extends Fragment {
             badge = UiUtil.badge(c, "ACCEPTED / CONFIRMED", "#DCFCE7", "#166534");
         }
 
-        col.addView(UiUtil.headerRow(c, p.getCategory(), badge));
-        col.addView(UiUtil.text(c, "Professor: " + p.getFacultyDisplayName(), 13f, R.color.text_primary, false));
-        col.addView(UiUtil.text(c, p.getDisplayDate() + " • " + p.getTimeSlot(), 13f, R.color.text_secondary, false));
-        col.addView(UiUtil.text(c, "Location: " + p.getLocation(), 13f, R.color.text_secondary, false));
+        col.addView(UiUtil.text(c, p.getCategory(), 23f, R.color.white, true));
+        badge.setBackgroundResource(com.example.citecschedulingapp.R.drawable.brand_yellow);
+        badge.setTextColor(c.getColor(R.color.brand_ink));
+        LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        badgeParams.topMargin = UiUtil.dp(c, 14);
+        badgeParams.bottomMargin = UiUtil.dp(c, 14);
+        badge.setLayoutParams(badgeParams);
+        col.addView(badge);
+        col.addView(UiUtil.text(c, "Professor", 13f, R.color.brand_yellow, true));
+        col.addView(UiUtil.text(c, p.getFacultyDisplayName(), 18f, R.color.white, false));
+        col.addView(UiUtil.text(c, p.getDisplayDate() + " • " + p.getTimeSlot(), 14f, R.color.white, false));
+        col.addView(UiUtil.text(c, "Location: " + p.getLocation(), 13f, R.color.white, false));
 
         if (!p.getPurpose().isEmpty()) {
-            col.addView(UiUtil.text(c, "Purpose: " + p.getPurpose(), 13f, R.color.text_secondary, false));
+            col.addView(UiUtil.text(c, "Purpose: " + p.getPurpose(), 13f, R.color.white, false));
         }
 
         if (isDeclined && !p.getDeclineReason().isEmpty()) {
             col.addView(UiUtil.textColor(c, "Decline Reason from Professor: " + p.getDeclineReason(),
-                    13f, Color.parseColor("#991B1B"), true));
+                    13f, c.getColor(R.color.brand_yellow), true));
         }
 
         if (isCancelled) {
             col.addView(UiUtil.textColor(c, "Reason from Professor: "
                             + (p.getCancelReason().isEmpty() ? "No reason provided." : p.getCancelReason()),
-                    13f, Color.parseColor("#991B1B"), true));
+                    13f, c.getColor(R.color.brand_yellow), true));
         }
 
         if (!p.getTransferReason().isEmpty()) {
             col.addView(UiUtil.text(c, "Transferred to this professor. Reason: " + p.getTransferReason(),
-                    12f, R.color.accent, false));
+                    12f, R.color.brand_yellow, false));
         }
 
         if (!ended && !isDeclined && !isCancelled) {
             LinearLayout row = UiUtil.buttonRow(c);
             MaterialButton reschedule = UiUtil.outlinedButton(c, "Reschedule", c.getColor(R.color.primary));
             MaterialButton cancel = UiUtil.outlinedButton(c, "Cancel Request", Color.parseColor("#DC2626"));
+            reschedule.setBackgroundTintList(ColorStateList.valueOf(c.getColor(R.color.brand_yellow)));
+            reschedule.setTextColor(c.getColor(R.color.brand_ink));
+            reschedule.setStrokeWidth(0);
+            cancel.setTextColor(Color.WHITE);
+            cancel.setStrokeColor(ColorStateList.valueOf(Color.WHITE));
             UiUtil.addToButtonRow(c, row, reschedule, true);
             UiUtil.addToButtonRow(c, row, cancel, false);
             reschedule.setOnClickListener(v -> confirm(p, true));

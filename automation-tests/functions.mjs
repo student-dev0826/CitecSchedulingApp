@@ -53,7 +53,9 @@ export async function runFunctions({ api, artifacts, report, pkg }) {
     });
     if (!login) break;
     if (!faculty) {
-      await test('student-schedule', () => tab('nav_schedule', ['tvWeekRange', 'btnDayMon']));
+      await test('student-navigation-no-unused-schedule', async () => {
+        if ((await api('POST', '/elements', { using: 'id', value: `${pkg}:id/nav_schedule` })).length) throw new Error('Unused Schedule tab is still present');
+      });
       await test('student-book-posted', () => tab('nav_book', ['gridBookingCalendar', 'tvBookingMonth', 'tvBookingMonthCount']));
       await test('student-book-custom', async () => { await click('btnModeCustom'); await visible('actCustomProfessor'); await visible('etCustomDate'); });
       await test('student-book-switch-back', async () => { await click('btnModePosted'); await visible('gridBookingCalendar'); });

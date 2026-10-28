@@ -1,0 +1,6 @@
+<resources>
+    <string name="ui_brand">CITEC SCHEDULING</string>
+    <string name="nav_faculty_role_short">Faculty</string>
+    <string name="ui_login_student">Student Login</string>
+    <string name="ui_login_faculty">Faculty Login</string>
+</resources>

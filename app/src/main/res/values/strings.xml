@@ -6,21 +6,12 @@
     <string name="subtitle_register">Fill in your details to create a student account</string>
 
     <string name="label_student_id">Student ID</string>
-    <string name="hint_student_id">e.g. 2026-001</string>
     <string name="label_first_name">First Name</string>
-    <string name="hint_first_name">e.g. Juan</string>
     <string name="label_last_name">Last Name</string>
-    <string name="hint_last_name">e.g. Dela Cruz</string>
-    <string name="label_full_name">Full Name</string>
-    <string name="hint_full_name">e.g. Juan Dela Cruz</string>
     <string name="label_email">Email</string>
-    <string name="hint_email">e.g. juan@gmail.com</string>
     <string name="label_email_or_id">Email or Student ID</string>
-    <string name="hint_email_or_id">Enter your Email or Student ID</string>
     <string name="label_password">Password</string>
-    <string name="hint_password">Enter your password</string>
     <string name="label_confirm_password">Confirm Password</string>
-    <string name="hint_confirm_password">Re-enter your password</string>
     <string name="label_remember_me">Remember Me</string>
 
     <string name="btn_login">LOGIN</string>
@@ -32,24 +23,22 @@
 
     <!-- Home screen & Navigation strings -->
     <string name="nav_home">Home</string>
-    <string name="nav_schedule">Schedule</string>
     <string name="nav_book">Book</string>
     <string name="nav_chat">Chat</string>
     <string name="nav_appointments">Appointments</string>
+    <string name="my_appointments">My Appointments</string>
     <string name="nav_profile">Profile</string>
 
     <!-- Faculty Navigation & Registration strings -->
-    <string name="nav_faculty_dashboard">Dashboard</string>
+    <string name="nav_faculty_dashboard">Home</string>
     <string name="nav_faculty_schedules">Schedules</string>
-    <string name="nav_faculty_availability">Set Availability</string>
+    <string name="nav_faculty_availability">Slots</string>
     <string name="nav_faculty_transfer">Transfer</string>
     <string name="nav_faculty_chat">Chat</string>
 
-    <string name="label_account_type">Account Type / Role</string>
     <string name="label_role_student">Student</string>
     <string name="label_role_faculty">Faculty / Professor</string>
     <string name="label_faculty_id">Faculty / Employee ID</string>
-    <string name="hint_faculty_id">e.g. PROF-2026-01</string>
     <string name="label_department">Department / College</string>
     <string name="btn_register_student">REGISTER AS STUDENT</string>
     <string name="btn_register_faculty">REGISTER AS FACULTY</string>
@@ -59,10 +48,6 @@
     <string name="welcome_user">Welcome, %1$s</string>
     <string name="label_student_id_format">Student ID: %1$s</string>
     <string name="label_email_format">Email: %1$s</string>
-    <string name="btn_view_schedule">VIEW SCHEDULE</string>
-    <string name="btn_book_appointment">BOOK APPOINTMENT</string>
-    <string name="btn_my_appointments">MY APPOINTMENTS</string>
-    <string name="btn_profile">PROFILE</string>
     <string name="btn_logout">LOGOUT</string>
 
     <!-- Forgot Password Strings -->
@@ -91,10 +76,8 @@
     <string name="err_student_id_required">Student ID is required.</string>
     <string name="err_first_name_required">First name is required.</string>
     <string name="err_last_name_required">Last name is required.</string>
-    <string name="err_full_name_required">Full name is required.</string>
     <string name="err_email_required">Email is required.</string>
     <string name="err_email_invalid">Please enter a valid email address.</string>
-    <string name="err_email_or_id_required">Email or Student ID is required.</string>
     <string name="err_password_required">Password is required.</string>
     <string name="err_password_length">Password must be at least 8 characters.</string>
     <string name="err_confirm_password_required">Confirm password is required.</string>

@@ -48,10 +48,7 @@ public class WeeklyAvailabilityActivity extends AppCompatActivity {
         SessionManager session = new SessionManager(this);
         if (!session.isLoggedIn() || !session.isFaculty()) { finish(); return; }
         setContentView(R.layout.activity_weekly_availability);
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (view, insets) -> {
-            androidx.core.graphics.Insets bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom); return insets;
-        });
+        UiUtil.applyWindowInsets(this);
         repository = ScheduleRepository.getInstance(this);
         grid = findViewById(R.id.gridAvailabilityMonth);
         rules = findViewById(R.id.containerRecurringRules);
@@ -138,11 +135,15 @@ public class WeeklyAvailabilityActivity extends AppCompatActivity {
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();
         params.width = 0; params.height = UiUtil.dp(this, header ? 28 : 64);
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f); params.setMargins(2, 2, 2, 2); cell.setLayoutParams(params);
-        cell.setBackgroundColor(Color.parseColor(open > 0 ? "#DCFCE7" : booked > 0 ? "#FEF3C7" : "#FFFFFF"));
+        cell.setBackgroundColor(getColor(open > 0 ? R.color.brand_yellow : booked > 0 ? R.color.brand_tint : R.color.white));
         if (date != null) {
             cell.setContentDescription(date + ", " + open + " available slots, " + booked + " appointments");
             cell.setSelected(date.equals(selectedDate));
-            if (date.equals(selectedDate)) { cell.setTypeface(null, android.graphics.Typeface.BOLD); cell.setTextColor(getColor(R.color.accent)); }
+            if (date.equals(selectedDate)) {
+                cell.setTypeface(null, android.graphics.Typeface.BOLD);
+                cell.setBackgroundColor(getColor(R.color.primary));
+                cell.setTextColor(Color.WHITE);
+            }
             cell.setOnClickListener(v -> { selectedDate = date; drawCalendar(); drawDay(); });
         }
         grid.addView(cell);

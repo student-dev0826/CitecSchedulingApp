@@ -56,6 +56,7 @@ public class FacultyHomeActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_faculty_home);
+        UiUtil.applyWindowInsets(this);
 
         bottomNavigationView = findViewById(R.id.bottomNavigation);
 
@@ -71,6 +72,7 @@ public class FacultyHomeActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigation() {
+        bottomNavigationView.setOnItemReselectedListener(item -> { });
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             Fragment fragment = null;

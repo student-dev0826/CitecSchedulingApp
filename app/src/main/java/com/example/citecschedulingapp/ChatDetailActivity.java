@@ -43,14 +43,18 @@ public class ChatDetailActivity extends AppCompatActivity {
 
     private Handler pollHandler;
     private Runnable pollRunnable;
-    private String lastSignature = "";
     private boolean loading = false;
     private boolean sending = false;
+    private boolean deleting;
+    private int readGeneration;
+    private long lastDisplayedId;
+    private MaterialButton removeConversation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_detail);
+        UiUtil.applyWindowInsets(this);
 
         sessionManager = new SessionManager(this);
         chatRepository = ChatRepository.getInstance(this);
@@ -92,6 +96,9 @@ public class ChatDetailActivity extends AppCompatActivity {
         containerMessages = findViewById(R.id.containerMessages);
         etMessageInput = findViewById(R.id.etMessageInput);
         btnSend = findViewById(R.id.btnSend);
+        removeConversation = findViewById(R.id.btnRemoveConversation);
+        removeConversation.setEnabled(false);
+        removeConversation.setOnClickListener(v -> confirmRemoval(null));
 
         if (tvChatContactName != null) {
             tvChatContactName.setText(recipientName);
@@ -139,7 +146,7 @@ public class ChatDetailActivity extends AppCompatActivity {
     }
 
     private void attemptSendMessage() {
-        if (etMessageInput == null || etMessageInput.getText() == null || sending) return;
+        if (etMessageInput == null || etMessageInput.getText() == null || sending || deleting) return;
 
         final String text = etMessageInput.getText().toString().trim();
         if (TextUtils.isEmpty(text)) {
@@ -153,7 +160,7 @@ public class ChatDetailActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Object data) {
                         sending = false;
-                        if (isFinishing()) return;
+                        if (isFinishing() || isDestroyed()) return;
                         btnSend.setEnabled(true);
                         etMessageInput.setText("");
                         loadMessages();
@@ -170,46 +177,54 @@ public class ChatDetailActivity extends AppCompatActivity {
     }
 
     private void loadMessages() {
-        if (containerMessages == null || chatRepository == null || loading) return;
+        if (containerMessages == null || chatRepository == null || loading || deleting) return;
         loading = true;
+        final int generation = readGeneration;
 
         chatRepository.fetchConversation(currentUserId, recipientId, new ChatRepository.Result<List<ChatMessage>>() {
             @Override
             public void onSuccess(List<ChatMessage> conversation) {
+                if (generation != readGeneration) return;
                 loading = false;
-                if (isFinishing() || conversation == null) return;
+                if (isFinishing() || isDestroyed() || !getLifecycle().getCurrentState().isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED) || conversation == null) return;
                 showMessages(conversation);
             }
 
             @Override
             public void onError(String message) {
+                if (generation != readGeneration) return;
                 loading = false;   // keep what is on screen; try again on the next poll
+                if (isFinishing() || isDestroyed() || containerMessages.getChildCount() > 0) return;
+                TextView error = new TextView(ChatDetailActivity.this);
+                error.setText(message);
+                error.setTextColor(getColor(R.color.text_primary));
+                containerMessages.addView(error);
             }
         });
     }
 
     private void showMessages(List<ChatMessage> conversation) {
+        lastDisplayedId = 0;
+        for (ChatMessage message : conversation) {
+            try { lastDisplayedId = Math.max(lastDisplayedId, Long.parseLong(message.getMessageId())); }
+            catch (NumberFormatException ignored) { }
+        }
+        removeConversation.setEnabled(lastDisplayedId > 0 && !deleting);
         // Anything the other person sent that I haven't read is read now: tell the server.
         boolean hasIncomingUnread = false;
-        int mySeen = 0;
         for (ChatMessage m : conversation) {
             boolean mine = m.getSenderId().equalsIgnoreCase(currentUserId);
             if (!mine && !m.isRead()) hasIncomingUnread = true;
-            if (mine && m.isRead()) mySeen++;
         }
         if (hasIncomingUnread) {
             chatRepository.markRead(currentUserId, recipientId);
         }
 
-        // Redraw only when something changed (new message or "Seen" status).
-        String signature = conversation.size() + ":" + mySeen;
-        if (signature.equals(lastSignature)) return;
-        lastSignature = signature;
-
-        containerMessages.removeAllViews();
-
         if (conversation.isEmpty()) {
+            if (containerMessages.getChildCount() == 1 && "empty".equals(containerMessages.getChildAt(0).getTag())) return;
+            containerMessages.removeAllViews();
             TextView tvEmpty = new TextView(this);
+            tvEmpty.setTag("empty");
             tvEmpty.setText("No messages yet. Send a message to start chatting!");
             tvEmpty.setTextColor(getResources().getColor(R.color.text_secondary));
             tvEmpty.setGravity(Gravity.CENTER);
@@ -217,6 +232,11 @@ public class ChatDetailActivity extends AppCompatActivity {
             containerMessages.addView(tvEmpty);
             return;
         }
+
+        if (containerMessages.getChildCount() == 1 && "empty".equals(containerMessages.getChildAt(0).getTag())) {
+            containerMessages.removeAllViews();
+        }
+        int previousCount = containerMessages.getChildCount();
 
         int lastMineIndex = -1;
         for (int i = 0; i < conversation.size(); i++) {
@@ -228,12 +248,67 @@ public class ChatDetailActivity extends AppCompatActivity {
             boolean isSentByMe = msg.getSenderId().equalsIgnoreCase(currentUserId);
             // Show "Seen" under my most recent message once they have read it.
             boolean showSeen = isSentByMe && i == lastMineIndex && msg.isRead();
-            containerMessages.addView(createMessageBubble(msg, isSentByMe, showSeen));
+            // Reuse unchanged bubbles; a new message must not rebuild the entire history.
+            List<String> content = java.util.Arrays.asList(msg.getMessageId(), msg.getSenderId(),
+                    msg.getMessageText(), msg.getTimestamp(), Boolean.toString(showSeen));
+            View existing = containerMessages.getChildAt(i);
+            if (existing != null && content.equals(existing.getTag())) continue;
+            View bubble = createMessageBubble(msg, isSentByMe, showSeen);
+            bubble.setTag(content);
+            if (existing != null) containerMessages.removeViewAt(i);
+            containerMessages.addView(bubble, i);
         }
 
-        if (scrollView != null) {
+        while (containerMessages.getChildCount() > conversation.size()) {
+            containerMessages.removeViewAt(containerMessages.getChildCount() - 1);
+        }
+
+        if (scrollView != null && conversation.size() > previousCount) {
             scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
         }
+    }
+
+    private void confirmRemoval(String messageId) {
+        if (deleting || sending || (messageId == null && lastDisplayedId == 0)) return;
+        final long throughId = lastDisplayedId;
+        new androidx.appcompat.app.AlertDialog.Builder(this, R.style.WeeklyAvailabilityDialog)
+                .setTitle(messageId == null ? R.string.chat_remove_conversation : R.string.chat_remove_message)
+                .setMessage(messageId == null ? R.string.chat_remove_conversation_confirm : R.string.chat_remove_message_confirm)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.chat_remove_for_me, (dialog, which) -> remove(messageId, throughId))
+                .show();
+    }
+
+    private void remove(String messageId, long throughId) {
+        if (deleting || sending) return;
+        deleting = true;
+        readGeneration++; // Ignore an older poll that might otherwise restore a removed bubble.
+        loading = false;
+        btnSend.setEnabled(false);
+        removeConversation.setEnabled(false);
+        ChatRepository.Result<Object> callback = new ChatRepository.Result<Object>() {
+            @Override public void onSuccess(Object data) {
+                deleting = false;
+                if (isFinishing() || isDestroyed()) return;
+                btnSend.setEnabled(true);
+                ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+                        .cancel(ChatUnreadMonitor.notificationId(recipientId));
+                if (messageId == null) finish();
+                else loadMessages();
+            }
+            @Override public void onError(String message) {
+                deleting = false;
+                if (isFinishing() || isDestroyed()) return;
+                btnSend.setEnabled(true);
+                removeConversation.setEnabled(lastDisplayedId > 0);
+                new androidx.appcompat.app.AlertDialog.Builder(ChatDetailActivity.this, R.style.WeeklyAvailabilityDialog)
+                        .setTitle(R.string.chat_remove_failed).setMessage(message)
+                        .setPositiveButton(android.R.string.ok, null).show();
+                loadMessages();
+            }
+        };
+        if (messageId == null) chatRepository.deleteConversation(recipientId, throughId, callback);
+        else chatRepository.deleteMessage(messageId, callback);
     }
 
     private View createMessageBubble(ChatMessage message, boolean isSentByMe, boolean showSeen) {
@@ -281,6 +356,15 @@ public class ChatDetailActivity extends AppCompatActivity {
         card.addView(cardContent);
 
         row.addView(card);
+        MaterialButton remove = UiUtil.outlinedButton(this, getString(R.string.chat_remove_message), getColor(R.color.text_secondary));
+        remove.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        remove.setText(R.string.chat_remove_message);
+        remove.setAllCaps(false);
+        remove.setContentDescription(getString(R.string.chat_remove_message_id, message.getMessageId()));
+        remove.setOnClickListener(v -> confirmRemoval(message.getMessageId()));
+        row.addView(remove);
+        card.setOnLongClickListener(v -> { confirmRemoval(message.getMessageId()); return true; });
         return row;
     }
 }

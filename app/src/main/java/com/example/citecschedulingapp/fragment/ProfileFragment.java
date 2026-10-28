@@ -62,7 +62,7 @@ public class ProfileFragment extends Fragment {
             tvProfileName.setText(fullName);
         }
         if (tvProfileStudentId != null) {
-            tvProfileStudentId.setText(getString(R.string.label_student_id_format, studentId));
+            tvProfileStudentId.setText((sessionManager.isFaculty() ? "Faculty ID: " : "Student ID: ") + studentId);
         }
         if (tvProfileEmail != null) {
             tvProfileEmail.setText(email);

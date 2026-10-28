@@ -39,7 +39,9 @@ public class FacultyChatFragment extends Fragment {
             handler.postDelayed(this, REFRESH_MS);
         }
     };
-    private String lastSignature = "";
+    private String lastSignature;
+    private int viewGeneration;
+    private boolean loading;
 
     @Nullable
     @Override
@@ -54,13 +56,14 @@ public class FacultyChatFragment extends Fragment {
             sessionManager = new SessionManager(getContext());
             chatRepository = ChatRepository.getInstance(getContext());
         }
+        viewGeneration++;
+        lastSignature = null;
         containerStudentContacts = view.findViewById(R.id.containerStudentContacts);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        lastSignature = "";
         handler.post(refreshTask);
     }
 
@@ -70,17 +73,32 @@ public class FacultyChatFragment extends Fragment {
         handler.removeCallbacks(refreshTask);
     }
 
+    @Override public void onDestroyView() {
+        handler.removeCallbacks(refreshTask);
+        viewGeneration++;
+        loading = false;
+        containerStudentContacts = null;
+        super.onDestroyView();
+    }
+
     private String myId() {
         return sessionManager != null ? "PROF-" + sessionManager.getUserId() : "";
     }
 
     private void refresh() {
         if (chatRepository == null) return;
+        if (loading) return;
+        loading = true;
+        final int generation = viewGeneration;
         chatRepository.loadConversations(myId(), new ChatRepository.Result<List<ChatConversation>>() {
             @Override public void onSuccess(List<ChatConversation> data) {
-                if (isAdded()) render(data);
+                if (generation != viewGeneration) return;
+                loading = false;
+                if (isResumed() && getView() != null) render(data);
             }
-            @Override public void onError(String message) { }
+            @Override public void onError(String message) {
+                if (generation == viewGeneration) loading = false;
+            }
         });
     }
 

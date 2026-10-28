@@ -2,7 +2,7 @@
 // ==========================================
 // CITEC Scheduling System - Chat API (server-backed, with unread tracking)
 // Upload next to schedules.php / login.php. Tables/columns upgrade automatically.
-// Actions (POST field "action"): send | fetch | conversations | mark_read
+// Actions: send | fetch | conversations | mark_read | delete_message | delete_conversation
 // IDs: students = their student number, professors = "PROF-" + instructor_id
 // ==========================================
 
@@ -54,6 +54,8 @@ function chat_field($data, $key, $default = '') {
     return isset($data[$key]) ? trim((string) $data[$key]) : $default;
 }
 
+require_once __DIR__ . '/auth.php';
+
 // ---------- table + upgrade ----------
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS chat_messages (
@@ -69,6 +71,13 @@ try {
         KEY idx_recipient (recipient_id, is_read),
         KEY idx_pair (sender_id, recipient_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS chat_message_hidden (
+        user_id VARCHAR(50) NOT NULL,
+        message_id INT NOT NULL,
+        PRIMARY KEY (user_id, message_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    cs_auth_schema($pdo);
 
     // Add is_read to an older table (SHOW COLUMNS works on free hosts that block information_schema).
     $q = $pdo->query("SHOW COLUMNS FROM chat_messages LIKE 'is_read'");
@@ -86,12 +95,27 @@ $action = strtolower(chat_field($data, 'action', ''));
 if ($action === '' && isset($data['message_text'])) $action = 'send';
 
 try {
+    // The session, never a supplied user ID, determines whose view is read or removed.
+    $actor = cs_actor($pdo, $data);
+    if ($actor['role'] === 'FACULTY') {
+        $identity = 'PROF-' . $actor['user_id'];
+    } else {
+        $q = $pdo->prepare('SELECT student_id FROM users WHERE user_id = ?');
+        $q->execute([$actor['user_id']]);
+        $identity = (string)$q->fetchColumn();
+    }
+    $identityField = $action === 'send' ? 'sender_id' : ($action === 'fetch' ? 'user1' : 'user_id');
+    if (isset($data[$identityField]) && strcasecmp((string)$data[$identityField], $identity) !== 0) {
+        throw new InvalidArgumentException('You can access only your own messages.');
+    }
+    $data[$identityField] = $identity;
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') throw new InvalidArgumentException('Use POST for chat actions.');
     switch ($action) {
 
         case 'send': {
             $sid   = chat_field($data, 'sender_id');
             $sname = chat_field($data, 'sender_name');
-            $srole = chat_field($data, 'sender_role');
+            $srole = $actor['role'];
             $rid   = chat_field($data, 'recipient_id');
             $rname = chat_field($data, 'recipient_name');
             $text  = chat_field($data, 'message_text');
@@ -121,9 +145,10 @@ try {
             $stmt = $pdo->prepare("SELECT message_id, sender_id, sender_name, sender_role, recipient_id, recipient_name,
                     message_text, is_read, DATE_FORMAT(created_at, '%h:%i %p') AS timestamp
                 FROM chat_messages
-                WHERE (sender_id = :a1 AND recipient_id = :b1) OR (sender_id = :b2 AND recipient_id = :a2)
+                WHERE ((sender_id = :a1 AND recipient_id = :b1) OR (sender_id = :b2 AND recipient_id = :a2))
+                  AND NOT EXISTS (SELECT 1 FROM chat_message_hidden h WHERE h.user_id = :viewer AND h.message_id = chat_messages.message_id)
                 ORDER BY message_id ASC");
-            $stmt->execute([':a1' => $me, ':b1' => $other, ':b2' => $other, ':a2' => $me]);
+            $stmt->execute([':a1' => $me, ':b1' => $other, ':b2' => $other, ':a2' => $me, ':viewer' => $me]);
             chat_respond(true, "OK", $stmt->fetchAll());
         }
 
@@ -141,12 +166,13 @@ try {
                            MAX(message_id) AS last_id,
                            SUM(CASE WHEN recipient_id = :me2 AND is_read = 0 THEN 1 ELSE 0 END) AS unread
                     FROM chat_messages
-                    WHERE sender_id = :me4 OR recipient_id = :me5
+                    WHERE (sender_id = :me4 OR recipient_id = :me5)
+                      AND NOT EXISTS (SELECT 1 FROM chat_message_hidden h WHERE h.user_id = :viewer AND h.message_id = chat_messages.message_id)
                     GROUP BY contact_id
                 ) t
                 JOIN chat_messages m ON m.message_id = t.last_id
                 ORDER BY t.last_id DESC");
-            $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me, ':me4' => $me, ':me5' => $me]);
+            $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me, ':me4' => $me, ':me5' => $me, ':viewer' => $me]);
             $rows = $stmt->fetchAll();
             foreach ($rows as $i => $r) {
                 $rows[$i]['unread'] = (int) $r['unread'];
@@ -161,14 +187,40 @@ try {
             $other = chat_field($data, 'contact_id');
             if ($me === '' || $other === '') chat_respond(false, "Missing parameters.");
             $stmt = $pdo->prepare("UPDATE chat_messages SET is_read = 1
-                WHERE recipient_id = :me AND sender_id = :other AND is_read = 0");
-            $stmt->execute([':me' => $me, ':other' => $other]);
+                WHERE recipient_id = :me AND sender_id = :other AND is_read = 0
+                  AND NOT EXISTS (SELECT 1 FROM chat_message_hidden h WHERE h.user_id = :viewer AND h.message_id = chat_messages.message_id)");
+            $stmt->execute([':me' => $me, ':other' => $other, ':viewer' => $me]);
             chat_respond(true, "OK");
+        }
+
+        case 'delete_message': {
+            $id = filter_var($data['message_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if (!$id) throw new InvalidArgumentException('Invalid message.');
+            $q = $pdo->prepare('SELECT message_id FROM chat_messages WHERE message_id = ? AND (sender_id = ? OR recipient_id = ?)');
+            $q->execute([$id, $identity, $identity]);
+            if (!$q->fetchColumn()) throw new InvalidArgumentException('Message unavailable.');
+            $q = $pdo->prepare('INSERT IGNORE INTO chat_message_hidden (user_id, message_id) VALUES (?, ?)');
+            $q->execute([$identity, $id]);
+            chat_respond(true, 'Message removed for you.');
+        }
+        case 'delete_conversation': {
+            $other = chat_field($data, 'contact_id');
+            $through = filter_var($data['through_message_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($other === '' || !$through) throw new InvalidArgumentException('Conversation and last displayed message are required.');
+            // Only hide the history the user confirmed; messages arriving afterwards survive.
+            $q = $pdo->prepare('INSERT IGNORE INTO chat_message_hidden (user_id, message_id)
+                SELECT ?, message_id FROM chat_messages
+                WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
+                  AND message_id <= ?');
+            $q->execute([$identity, $identity, $other, $other, $identity, $through]);
+            chat_respond(true, 'Conversation removed for you.');
         }
 
         default:
             chat_respond(false, "Unknown action.");
     }
+} catch (InvalidArgumentException $e) {
+    chat_respond(false, $e->getMessage());
 } catch (Throwable $e) {
     error_log("chat.php: " . $e->getMessage());
     chat_respond(false, "Server database error. Please try again.");

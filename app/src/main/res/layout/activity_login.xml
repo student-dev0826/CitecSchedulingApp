@@ -1,221 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/bg_light"
-    android:fillViewport="true"
-    tools:context=".LoginActivity">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="24dp">
-
-        <!-- App Header Banner -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="20dp"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:letterSpacing="0.05"
-                android:text="@string/app_name"
-                android:textColor="@color/primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvWelcomeTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/title_welcome_back"
-                android:textColor="@color/primary_dark"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvSubtitleLogin"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center"
-                android:text="@string/subtitle_login"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+<?xml version='1.0' encoding='utf-8'?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg_light" android:fillViewport="true" android:clipToPadding="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="CITEC SCHEDULING" android:textSize="13sp" android:textColor="@color/primary" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="University of Batangas Lipa City" android:textSize="12sp" android:textColor="@color/primary" android:layout_marginTop="4dp" android:textStyle="bold" />
         </LinearLayout>
-
-        <!-- Login Form Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/card_bg"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            app:strokeWidth="0dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <!-- Account Role Toggle Group -->
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/toggleRoleGroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:checkedButton="@id/btnRoleStudent"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRoleStudent"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="@string/label_role_student"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnRoleFaculty"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="@string/label_role_faculty"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                <!-- Email or ID Input -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilIdentifier"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/label_email_or_id"
-                    android:textColorHint="@color/text_secondary"
-                    app:boxCornerRadiusBottomEnd="10dp"
-                    app:boxCornerRadiusBottomStart="10dp"
-                    app:boxCornerRadiusTopEnd="10dp"
-                    app:boxCornerRadiusTopStart="10dp"
-                    app:hintTextColor="@color/primary">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etIdentifier"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress"
-                        android:maxLines="1"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_secondary" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Password Input -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilPassword"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:hint="@string/label_password"
-                    android:textColorHint="@color/text_secondary"
-                    app:boxCornerRadiusBottomEnd="10dp"
-                    app:boxCornerRadiusBottomStart="10dp"
-                    app:boxCornerRadiusTopEnd="10dp"
-                    app:boxCornerRadiusTopStart="10dp"
-                    app:hintTextColor="@color/primary"
-                    app:passwordToggleEnabled="true">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword"
-                        android:maxLines="1"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_secondary" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Forgot Password Link -->
-                <TextView
-                    android:id="@+id/tvForgotPassword"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="4dp"
-                    android:text="@string/link_forgot_password"
-                    android:textColor="@color/accent"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-
-                <!-- Remember Me CheckBox -->
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/cbRememberMe"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/label_remember_me"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    app:buttonTint="@color/primary" />
-
-                <!-- Progress Bar -->
-                <ProgressBar
-                    android:id="@+id/progressBar"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="16dp"
-                    android:visibility="gone" />
-
-                <!-- Login Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnLogin"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="20dp"
-                    android:text="@string/btn_login"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    app:backgroundTint="@color/primary"
-                    app:cornerRadius="10dp" />
-
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/primary" app:cardCornerRadius="16dp" app:cardElevation="0dp" app:strokeWidth="0dp" android:layout_marginBottom="20dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Your Schedule&#10;Starts Here." android:textSize="28sp" android:textColor="@color/white" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Your next meeting is just a sign-in away." android:textSize="14sp" android:textColor="@color/brand_yellow" android:layout_marginTop="12dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- Register Link -->
-        <TextView
-            android:id="@+id/tvRegisterLink"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:padding="16dp"
-            android:text="@string/link_dont_have_account"
-            android:textColor="@color/accent"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/white" app:cardCornerRadius="16dp" app:cardElevation="0dp" app:strokeWidth="0dp" android:layout_marginBottom="20dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/toggleRoleGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/brand_nav" android:padding="4dp" app:checkedButton="@id/btnRoleStudent" app:selectionRequired="true" app:singleSelection="true">
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnRoleStudent" android:layout_width="0dp" android:layout_weight="1" android:layout_height="52dp" android:text="Student" android:textSize="14sp" android:textStyle="bold" android:textColor="@color/role_text" android:insetTop="0dp" android:insetBottom="0dp" app:backgroundTint="@color/role_fill" app:strokeWidth="0dp" app:cornerRadius="10dp" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnRoleFaculty" android:layout_width="0dp" android:layout_weight="1" android:layout_height="52dp" android:text="Faculty" android:textSize="14sp" android:textStyle="bold" android:textColor="@color/role_text" android:insetTop="0dp" android:insetBottom="0dp" app:backgroundTint="@color/role_fill" app:strokeWidth="0dp" app:cornerRadius="10dp" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Login" android:textSize="26sp" android:textColor="@color/text_primary" android:textStyle="bold" android:layout_marginTop="20dp" android:id="@+id/tvWelcomeTitle" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Access your portal to manage upcoming appointments." android:textSize="14sp" android:textColor="@color/text_secondary" android:layout_marginTop="8dp" android:layout_marginBottom="20dp" android:id="@+id/tvSubtitleLogin" />
+                <com.google.android.material.textfield.TextInputLayout android:id="@+id/tilIdentifier" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:hint="@string/label_email_or_id">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/etIdentifier" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textEmailAddress" android:maxLines="1" android:minHeight="56dp" android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout android:id="@+id/tilPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:hint="@string/label_password" app:endIconMode="password_toggle">
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/etPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textPassword" android:maxLines="1" android:minHeight="56dp" android:textSize="16sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.checkbox.MaterialCheckBox android:id="@+id/cbRememberMe" android:layout_width="wrap_content" android:layout_height="48dp" android:text="@string/label_remember_me" android:textSize="14sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/link_forgot_password" android:textSize="14sp" android:textColor="@color/primary" android:gravity="end" android:minHeight="48dp" android:paddingTop="12dp" android:clickable="true" android:focusable="true" android:textStyle="bold" android:id="@+id/tvForgotPassword" />
+                <ProgressBar android:id="@+id/progressBar" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:visibility="gone" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnLogin" android:layout_width="match_parent" android:layout_height="56dp" android:text="@string/btn_login" android:textColor="@color/brand_ink" android:textStyle="bold" android:textSize="16sp" android:textAllCaps="false" app:backgroundTint="@color/brand_yellow" app:cornerRadius="12dp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/link_dont_have_account" android:textSize="14sp" android:textColor="@color/primary" android:gravity="center" android:paddingTop="20dp" android:paddingBottom="12dp" android:clickable="true" android:focusable="true" android:textStyle="bold" android:id="@+id/tvRegisterLink" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" app:cardBackgroundColor="@color/primary" app:cardCornerRadius="16dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Need help signing in?" android:textSize="16sp" android:textColor="@color/brand_yellow" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Use your student or faculty credentials." android:textSize="13sp" android:textColor="@color/white" android:layout_marginTop="6dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </ScrollView>

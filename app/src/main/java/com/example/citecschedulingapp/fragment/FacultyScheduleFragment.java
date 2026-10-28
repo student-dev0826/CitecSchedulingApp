@@ -54,7 +54,6 @@ public class FacultyScheduleFragment extends Fragment {
         tvNoBookedStudents = view.findViewById(R.id.tvNoBookedStudents);
         containerBookedStudents = view.findViewById(R.id.containerBookedStudents);
 
-        loadBookedStudents();
     }
 
     @Override

@@ -23,8 +23,8 @@ public class LiveClock {
         @Override
         public void run() {
             Date now = new Date();
-            if (dateView != null) dateView.setText(dateFormat.format(now));
-            if (timeView != null) timeView.setText(timeFormat.format(now));
+            if (dateView != null) setIfChanged(dateView, dateFormat.format(now));
+            if (timeView != null) setIfChanged(timeView, timeFormat.format(now));
             // Re-run exactly on the next second boundary so the clock never drifts.
             handler.postDelayed(this, 1000 - (System.currentTimeMillis() % 1000));
         }
@@ -33,6 +33,10 @@ public class LiveClock {
     public LiveClock(TextView dateView, TextView timeView) {
         this.dateView = dateView;
         this.timeView = timeView;
+    }
+
+    private static void setIfChanged(TextView view, String value) {
+        if (!value.contentEquals(view.getText())) view.setText(value);
     }
 
     public void start() {

@@ -350,8 +350,9 @@ public class BookFragment extends Fragment {
         if (selectedDay != null) for (PostedSchedule slot : selectedDay) if (slot.getId() == selectedId) selectedSlot = slot;
         if (!loadingSlots) restoredSlotId = 0;
         monthLabel.setText(AppTime.display("MMMM yyyy").format(bookingMonth.getTime()));
+        String month = monthIso();
         int count = 0;
-        for (Map.Entry<String, List<PostedSchedule>> day : slotsByDate.entrySet()) if (day.getKey().startsWith(monthIso() + "-")) count += day.getValue().size();
+        for (Map.Entry<String, List<PostedSchedule>> day : slotsByDate.entrySet()) if (day.getKey().startsWith(month + "-")) count += day.getValue().size();
         monthCount.setText(count + (count == 1 ? " available slot this month" : " available slots this month"));
         calendarStatus.setText(loadingSlots ? "Updating availability…" : slotsError != null ? slotsError
                 : count == 0 ? "No open slots in this month" + (query.trim().isEmpty() ? ". Try another month or request a custom time." : " matching this professor or department.")
@@ -367,7 +368,7 @@ public class BookFragment extends Fragment {
         int offset = (bookingMonth.get(Calendar.DAY_OF_WEEK) + 5) % 7;
         for (int i = 0; i < offset; i++) addDateCell("", null, 0, false);
         for (int day = 1; day <= bookingMonth.getActualMaximum(Calendar.DAY_OF_MONTH); day++) {
-            String date = String.format(Locale.US, "%s-%02d", monthIso(), day);
+            String date = String.format(Locale.US, "%s-%02d", month, day);
             List<PostedSchedule> available = slotsByDate.get(date);
             addDateCell(String.valueOf(day), date, available == null ? 0 : available.size(), false);
         }
@@ -382,7 +383,7 @@ public class BookFragment extends Fragment {
         cell.setTypeface(null, count > 0 ? Typeface.BOLD : Typeface.NORMAL);
         cell.setTextColor(selected ? Color.WHITE : getResources().getColor(count > 0 ? R.color.primary : R.color.text_secondary, null));
         GradientDrawable background = new GradientDrawable();
-        background.setColor(selected ? getResources().getColor(R.color.primary, null) : count > 0 ? Color.parseColor("#DCFCE7") : Color.WHITE);
+        background.setColor(getResources().getColor(selected ? R.color.primary : count > 0 ? R.color.brand_yellow : R.color.white, null));
         background.setCornerRadius(UiUtil.dp(requireContext(), 6));
         cell.setBackground(background);
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();

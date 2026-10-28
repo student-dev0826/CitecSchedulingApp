@@ -19,6 +19,25 @@ public final class UiUtil {
 
     private UiUtil() {}
 
+    /** Keep content clear of system bars and the keyboard on edge-to-edge Android. */
+    public static void applyWindowInsets(android.app.Activity activity) {
+        androidx.core.view.WindowCompat.getInsetsController(activity.getWindow(),
+                activity.getWindow().getDecorView()).setAppearanceLightNavigationBars(true);
+        android.view.ViewGroup content = activity.findViewById(android.R.id.content);
+        android.view.View root = content.getChildAt(0);
+        if (root == null) return;
+        int left = root.getPaddingLeft(), top = root.getPaddingTop();
+        int right = root.getPaddingRight(), bottom = root.getPaddingBottom();
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+            androidx.core.graphics.Insets safe = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.systemBars()
+                            | androidx.core.view.WindowInsetsCompat.Type.ime());
+            view.setPadding(left + safe.left, top + safe.top, right + safe.right, bottom + safe.bottom);
+            return androidx.core.view.WindowInsetsCompat.CONSUMED;
+        });
+        androidx.core.view.ViewCompat.requestApplyInsets(root);
+    }
+
     public static int dp(Context c, int v) {
         return Math.round(v * c.getResources().getDisplayMetrics().density);
     }
@@ -30,7 +49,7 @@ public final class UiUtil {
         p.bottomMargin = dp(c, 12);
         card.setLayoutParams(p);
         card.setRadius(dp(c, 12));
-        card.setCardElevation(dp(c, 2));
+        card.setCardElevation(0);
         card.setCardBackgroundColor(Color.WHITE);
         card.setStrokeColor(ContextCompat.getColor(c, R.color.border_color));
         card.setStrokeWidth(dp(c, 1));
@@ -95,6 +114,8 @@ public final class UiUtil {
                 com.google.android.material.R.attr.materialButtonOutlinedStyle);
         b.setText(label);
         b.setTextSize(12f);
+        b.setAllCaps(false);
+        b.setLetterSpacing(0);
         b.setTextColor(colorInt);
         b.setStrokeColor(android.content.res.ColorStateList.valueOf(colorInt));
         b.setCornerRadius(dp(c, 8));

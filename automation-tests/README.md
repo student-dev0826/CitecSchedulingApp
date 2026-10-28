@@ -14,7 +14,7 @@ Credentials are not hardcoded in the files. Login screenshots/hierarchies are sk
 
 The suite checks role-specific login, navigation, student booking-mode switching, appointment filter interaction, professor availability/transfer form visibility, chat lists, profile identity, and logout. It never submits bookings, schedule changes, transfers or messages, and does not open conversations (which could mark messages read). These are UI checks, not proof of backend data correctness. Test results and screenshots use the same timestamped artifact folders as the smoke test.
 
-The first functional run was blocked before login: the phone denied `android.permission.INJECT_EVENTS` on the first Appium tap. Device interaction must be enabled before these checks can run. The prior launch/screenshot smoke test passed independently. Also, source inspection found no `nav_schedule` handler in `HomeActivity`; the student schedule check deliberately expects a weekly schedule and will report a failure if navigation does not work. No application source was changed.
+The first functional run was blocked before login: the phone denied `android.permission.INJECT_EVENTS` on the first Appium tap. Device interaction must be enabled before these checks can run. The prior launch/screenshot smoke test passed independently. The original run also found that student Schedule had no navigation handler. After physical-device verification on October 22, the unused tab and weekly screen were removed; the dashboard shortcut now opens Appointments. The functional suite verifies that the unused tab is absent.
 
 Run from the project root in PowerShell:
 

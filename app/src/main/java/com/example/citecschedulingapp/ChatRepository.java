@@ -29,19 +29,23 @@ public class ChatRepository {
 
     private static ChatRepository instance;
     private final ApiService api;
+    private final SessionManager session;
+    private final PendingRequests<Result<List<ChatConversation>>> conversations = new PendingRequests<>();
 
-    private ChatRepository() {
+    private ChatRepository(Context context) {
+        session = new SessionManager(context.getApplicationContext());
         api = RetrofitClient.getApiService();
     }
 
     public static synchronized ChatRepository getInstance(Context context) {
-        if (instance == null) instance = new ChatRepository();
+        if (instance == null) instance = new ChatRepository(context);
         return instance;
     }
 
-    private static Map<String, String> req(String action) {
+    private Map<String, String> req(String action) {
         Map<String, String> m = new HashMap<>();
         m.put("action", action);
+        m.put("auth_token", session.getAuthToken());
         return m;
     }
 
@@ -66,9 +70,30 @@ public class ChatRepository {
     }
 
     public void loadConversations(String myId, Result<List<ChatConversation>> cb) {
+        if (!conversations.join(myId, cb)) return;
         Map<String, String> m = req("conversations");
         m.put("user_id", myId);
-        api.chatConversations(m).enqueue(wrap(cb));
+        api.chatConversations(m).enqueue(wrap(new Result<List<ChatConversation>>() {
+            @Override public void onSuccess(List<ChatConversation> data) {
+                for (Result<List<ChatConversation>> listener : conversations.finish(myId)) listener.onSuccess(data);
+            }
+            @Override public void onError(String message) {
+                for (Result<List<ChatConversation>> listener : conversations.finish(myId)) listener.onError(message);
+            }
+        }));
+    }
+
+    public void deleteMessage(String messageId, Result<Object> cb) {
+        Map<String, String> fields = req("delete_message");
+        fields.put("message_id", messageId);
+        api.chatSimple(fields).enqueue(wrap(cb));
+    }
+
+    public void deleteConversation(String contactId, long throughId, Result<Object> cb) {
+        Map<String, String> fields = req("delete_conversation");
+        fields.put("contact_id", contactId);
+        fields.put("through_message_id", Long.toString(throughId));
+        api.chatSimple(fields).enqueue(wrap(cb));
     }
 
     /** Fire-and-forget: tells the server I have now seen everything from contactId. */

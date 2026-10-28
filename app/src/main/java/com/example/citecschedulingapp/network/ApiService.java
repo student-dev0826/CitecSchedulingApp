@@ -36,37 +36,8 @@ public interface ApiService {
             @Field("department") String department
     );
 
-    @FormUrlEncoded
-    @POST("register.php")
-    Call<RegisterResponse> registerUser(
-            @Field("student_id") String studentId,
-            @Field("first_name") String firstName,
-            @Field("last_name") String lastName,
-            @Field("full_name") String fullName,
-            @Field("email") String email,
-            @Field("password") String password,
-            @Field("role") String role
-    );
 
-    @FormUrlEncoded
-    @POST("register.php")
-    Call<RegisterResponse> registerUser(
-            @Field("student_id") String studentId,
-            @Field("full_name") String fullName,
-            @Field("email") String email,
-            @Field("password") String password,
-            @Field("role") String role,
-            @Field("department") String department
-    );
 
-    @FormUrlEncoded
-    @POST("register.php")
-    Call<RegisterResponse> registerUser(
-            @Field("student_id") String studentId,
-            @Field("full_name") String fullName,
-            @Field("email") String email,
-            @Field("password") String password
-    );
 
     @FormUrlEncoded
     @POST("login.php")
@@ -77,20 +48,7 @@ public interface ApiService {
             @Field("role") String role
     );
 
-    @FormUrlEncoded
-    @POST("login.php")
-    Call<LoginResponse> loginUser(
-            @Field("email") String email,
-            @Field("password") String password,
-            @Field("role") String role
-    );
 
-    @FormUrlEncoded
-    @POST("login.php")
-    Call<LoginResponse> loginUser(
-            @Field("email") String email,
-            @Field("password") String password
-    );
     // ---- Forgot password / reset ----
 
     @FormUrlEncoded

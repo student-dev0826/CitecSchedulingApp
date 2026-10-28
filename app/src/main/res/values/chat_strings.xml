@@ -1,0 +1,9 @@
+<resources>
+    <string name="chat_remove_message">Remove message</string>
+    <string name="chat_remove_message_id">Remove message %1$s</string>
+    <string name="chat_remove_conversation">Remove conversation</string>
+    <string name="chat_remove_for_me">Remove for me</string>
+    <string name="chat_remove_message_confirm">Remove this message from your chat? The other person will still have their copy. This cannot be undone.</string>
+    <string name="chat_remove_conversation_confirm">Remove the current conversation history for you? The other person keeps their copy. New messages can still arrive. This cannot be undone.</string>
+    <string name="chat_remove_failed">Could not remove</string>
+</resources>

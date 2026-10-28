@@ -28,7 +28,7 @@ public class HomeFragment extends Fragment {
     private TextView tvWelcomeName, tvStudentId, tvEmail;
     private TextView tvStatUpcoming, tvStatToday, tvStatCompleted;
     private TextView tvNextTitle, tvNextStatus, tvNextTime, tvNextLocation, tvNotifBadge;
-    private MaterialCardView cardBookAppointment, cardViewSchedule;
+    private MaterialCardView cardBookAppointment, cardViewAppointments;
     private ImageView ivNotification;
 
     private SessionManager sessionManager;
@@ -60,7 +60,7 @@ public class HomeFragment extends Fragment {
         tvNextLocation = view.findViewById(R.id.tvNextLocation);
         tvNotifBadge = view.findViewById(R.id.tvNotifBadge);
         cardBookAppointment = view.findViewById(R.id.cardBookAppointment);
-        cardViewSchedule = view.findViewById(R.id.cardViewSchedule);
+        cardViewAppointments = view.findViewById(R.id.cardViewAppointments);
         ivNotification = view.findViewById(R.id.ivNotification);
 
         liveClock = new LiveClock(
@@ -82,8 +82,8 @@ public class HomeFragment extends Fragment {
         cardBookAppointment.setOnClickListener(v -> {
             if (getActivity() instanceof HomeActivity) ((HomeActivity) getActivity()).selectTab(R.id.nav_book);
         });
-        cardViewSchedule.setOnClickListener(v -> {
-            if (getActivity() instanceof HomeActivity) ((HomeActivity) getActivity()).selectTab(R.id.nav_schedule);
+        cardViewAppointments.setOnClickListener(v -> {
+            if (getActivity() instanceof HomeActivity) ((HomeActivity) getActivity()).selectTab(R.id.nav_appointments);
         });
         ivNotification.setOnClickListener(v ->
                 NotificationHelper.showDialog(this, repository, sessionManager, tvNotifBadge));

@@ -92,9 +92,19 @@ public class PostedSchedule {
 
     public String getDisplayDate() { return AppTime.prettyDate(date); }
 
-    public long getStartMillis() { return AppTime.parseDateTime(startAt); }
+    // Response objects are immutable; avoid reparsing dates in every sort comparison/render.
+    private transient Long startMillis;
+    private transient Long endMillis;
 
-    public long getEndMillis() { return AppTime.parseDateTime(endAt); }
+    public long getStartMillis() {
+        if (startMillis == null) startMillis = AppTime.parseDateTime(startAt);
+        return startMillis;
+    }
+
+    public long getEndMillis() {
+        if (endMillis == null) endMillis = AppTime.parseDateTime(endAt);
+        return endMillis;
+    }
 
     /** True once the slot's end time has passed (uses the live clock). */
     public boolean hasEnded() {

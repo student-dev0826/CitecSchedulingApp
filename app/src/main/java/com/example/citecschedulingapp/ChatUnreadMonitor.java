@@ -46,6 +46,7 @@ public class ChatUnreadMonitor {
     private boolean running = false;
     private boolean firstPoll = true;
     private int generation = 0;
+    private int lastTotal = -1;
 
     public ChatUnreadMonitor(Activity activity, BottomNavigationView nav, int chatItemId, String myId) {
         this.activity = activity;
@@ -70,6 +71,7 @@ public class ChatUnreadMonitor {
     }
 
     public void start() {
+        if (running) return;
         running = true;
         generation++;
         poll(generation);
@@ -106,16 +108,19 @@ public class ChatUnreadMonitor {
     private void apply(List<ChatConversation> data) {
         int total = ChatRepository.totalUnread(data);
 
-        BadgeDrawable badge = nav.getOrCreateBadge(chatItemId);
-        badge.setBackgroundColor(Color.parseColor("#DC2626"));
-        badge.setBadgeTextColor(Color.WHITE);
-        if (total > 0) {
-            badge.setNumber(total);
-            badge.setMaxCharacterCount(3);
-            badge.setVisible(true);
-        } else {
-            badge.clearNumber();
-            badge.setVisible(false);
+        if (total != lastTotal) {
+            lastTotal = total;
+            BadgeDrawable badge = nav.getOrCreateBadge(chatItemId);
+            badge.setBackgroundColor(Color.parseColor("#DC2626"));
+            badge.setBadgeTextColor(Color.WHITE);
+            if (total > 0) {
+                badge.setNumber(total);
+                badge.setMaxCharacterCount(3);
+                badge.setVisible(true);
+            } else {
+                badge.clearNumber();
+                badge.setVisible(false);
+            }
         }
 
         boolean onChatTab = nav.getSelectedItemId() == chatItemId;

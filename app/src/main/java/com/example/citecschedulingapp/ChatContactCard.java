@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 import com.google.android.material.card.MaterialCardView;
 
-/** Builds one row of the chat list. Unread rows get a tinted card, bold blue name and a red count. */
+/** Builds one row of the chat list with a highlighted unread state. */
 public final class ChatContactCard {
 
     private ChatContactCard() {}
@@ -31,8 +31,8 @@ public final class ChatContactCard {
         lp.setMargins(0, 0, 0, dp(ctx, 10));
         card.setLayoutParams(lp);
         card.setRadius(dp(ctx, 16));
-        card.setCardElevation(dp(ctx, hasUnread ? 3 : 1));
-        card.setCardBackgroundColor(hasUnread ? Color.parseColor("#EFF6FF") : Color.WHITE);
+        card.setCardElevation(0);
+        card.setCardBackgroundColor(ctx.getColor(hasUnread ? R.color.brand_tint : R.color.white));
         card.setStrokeColor(hasUnread ? accent : ctx.getResources().getColor(R.color.border_color));
         card.setStrokeWidth(hasUnread ? dp(ctx, 2) : 1);
 

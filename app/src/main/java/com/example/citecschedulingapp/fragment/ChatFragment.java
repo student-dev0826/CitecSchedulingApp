@@ -49,7 +49,10 @@ public class ChatFragment extends Fragment {
 
     private List<FacultyItem> faculty;                 // null until loaded
     private List<ChatConversation> conversations = new ArrayList<>();
-    private String lastSignature = "";
+    private String lastSignature;
+    private int viewGeneration;
+    private boolean loading;
+    private boolean facultyLoading;
 
     @Nullable
     @Override
@@ -65,13 +68,14 @@ public class ChatFragment extends Fragment {
             scheduleRepository = ScheduleRepository.getInstance(getContext());
             chatRepository = ChatRepository.getInstance(getContext());
         }
+        viewGeneration++;
+        lastSignature = null;
         containerFacultyContacts = view.findViewById(R.id.containerFacultyContacts);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        lastSignature = "";            // redraw right away (e.g. after reading a chat)
         handler.post(refreshTask);
     }
 
@@ -81,6 +85,15 @@ public class ChatFragment extends Fragment {
         handler.removeCallbacks(refreshTask);
     }
 
+    @Override public void onDestroyView() {
+        handler.removeCallbacks(refreshTask);
+        viewGeneration++;
+        loading = false;
+        facultyLoading = false;
+        containerFacultyContacts = null;
+        super.onDestroyView();
+    }
+
     private String myId() {
         return sessionManager != null ? sessionManager.getStudentId() : "";
     }
@@ -88,26 +101,34 @@ public class ChatFragment extends Fragment {
     private void refresh() {
         if (chatRepository == null || scheduleRepository == null) return;
 
+        if (loading) return;
+        loading = true;
+        final int generation = viewGeneration;
         chatRepository.loadConversations(myId(), new ChatRepository.Result<List<ChatConversation>>() {
             @Override public void onSuccess(List<ChatConversation> data) {
-                if (!isAdded()) return;
+                if (generation != viewGeneration) return;
+                loading = false;
+                if (!isResumed() || getView() == null) return;
                 conversations = data != null ? data : new ArrayList<>();
                 render();
             }
-            @Override public void onError(String message) { }
+            @Override public void onError(String message) {
+                if (generation == viewGeneration) loading = false;
+            }
         });
 
-        if (faculty == null) {
+        if (faculty == null && !facultyLoading) {
+            facultyLoading = true;
             scheduleRepository.loadFaculty(new ScheduleRepository.ResultCallback<List<FacultyItem>>() {
                 @Override public void onSuccess(List<FacultyItem> data, String message) {
+                    if (generation != viewGeneration) return;
+                    facultyLoading = false;
                     if (!isAdded()) return;
                     faculty = data != null ? data : new ArrayList<>();
                     render();
                 }
                 @Override public void onError(String message) {
-                    if (!isAdded()) return;
-                    faculty = new ArrayList<>();
-                    render();
+                    if (generation == viewGeneration) facultyLoading = false;
                 }
             });
         }

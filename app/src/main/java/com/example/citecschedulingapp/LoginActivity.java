@@ -56,6 +56,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_login);
+        UiUtil.applyWindowInsets(this);
 
         initViews();
         setupToggleGroup();
@@ -99,10 +100,10 @@ public class LoginActivity extends AppCompatActivity {
         isFacultyMode = faculty;
         if (faculty) {
             if (tilIdentifier != null) tilIdentifier.setHint(getString(R.string.label_email_or_faculty_id));
-            if (tvWelcomeTitle != null) tvWelcomeTitle.setText("Faculty Portal Login");
+            if (tvWelcomeTitle != null) tvWelcomeTitle.setText(R.string.ui_login_faculty);
         } else {
             if (tilIdentifier != null) tilIdentifier.setHint(getString(R.string.label_email_or_id));
-            if (tvWelcomeTitle != null) tvWelcomeTitle.setText(R.string.title_welcome_back);
+            if (tvWelcomeTitle != null) tvWelcomeTitle.setText(R.string.ui_login_student);
         }
     }
 
