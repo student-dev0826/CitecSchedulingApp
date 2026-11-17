@@ -22,7 +22,7 @@ function command(executable, args, log, timeout = 120000) {
   return output;
 }
 async function request(method, route, body) {
-  const response = await fetch(server + route, { method, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(180000) });
+  const response = await fetch(server + route, { method, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(240000) });
   const result = await response.json();
   if (!response.ok || result.value?.error) throw new Error(`${method} ${route}: ${result.value?.message || JSON.stringify(result)}`);
   return result.value;
@@ -35,9 +35,9 @@ async function capture() {
 }
 try {
   if (!(await request('GET', '/status')).ready) throw new Error('Appium server is not ready.');
-  const devices = command(adb, ['devices', '-l'], 'devices.log').split(/\r?\n/).filter(line => /^\S+\s+device\s/.test(line)).map(line => line.split(/\s+/)[0]).filter(id => !id.startsWith('emulator-'));
+  const devices = command(adb, ['devices', '-l'], 'devices.log').split(/\r?\n/).filter(line => /^\S+\s+device\s/.test(line)).map(line => line.split(/\s+/)[0]).filter(id => !id.startsWith('emulator-') || option('--udid', '') === id);
   const udid = option('--udid', devices.length === 1 ? devices[0] : '');
-  if (!udid || !devices.includes(udid)) throw new Error('Connect and authorize one physical phone, or specify --udid for a connected physical phone.');
+  if (!udid || !devices.includes(udid)) throw new Error('Connect and authorize one physical phone, or specify --udid for a connected phone or emulator.');
   report.udid = udid;
   console.log(`Building debug APK for ${udid}...`);
   command('cmd.exe', ['/d', '/c', 'gradlew.bat :app:assembleDebug --console=plain'], 'build.log', 900000);
@@ -57,7 +57,8 @@ try {
     'appium:noReset': true, 'appium:fullReset': false, 'appium:forceAppLaunch': true,
     'appium:ignoreHiddenApiPolicyError': true,
     'appium:skipDeviceInitialization': true,
-    'appium:shouldTerminateApp': false, 'appium:newCommandTimeout': 120
+    'appium:shouldTerminateApp': false, 'appium:newCommandTimeout': 120,
+    'appium:uiautomator2ServerLaunchTimeout': 120000, 'appium:adbExecTimeout': 120000
   }, firstMatch: [{}] } });
   session = created.sessionId;
   report.steps.push('App launched through UiAutomator2');

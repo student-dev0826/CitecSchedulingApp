@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/white" />
+    <item>
+        <inset android:inset="-6dp">
+            <bitmap
+                android:src="@mipmap/ic_launcher_foreground"
+                android:gravity="fill" />
+        </inset>
+    </item>
+</layer-list>

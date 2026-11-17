@@ -1,5 +1,11 @@
 # Android Appium smoke test
 
+## Checks without login credentials
+
+With the debug APK installed and Appium running, use `node automation-tests/unauthenticated-ui.mjs`. It checks login role switching, required fields, remember-me interaction, password-recovery navigation and validation, and registration navigation and validation. It submits no accounts or password-reset emails. Set `ANDROID_SERIAL` for the target device (default `emulator-5554`) and optionally `APPIUM_SERVER` (default `http://127.0.0.1:4723`). Start from the login screen without a remembered session. Reports, screenshots and UI hierarchies are saved under `artifacts/`.
+
+The smoke/functional runner also accepts emulators when explicitly selected, for example `node automation-tests/smoke.mjs --udid emulator-5554 --functional`. Without `--udid`, it continues to select physical phones only. Emulator startup may require the extended UiAutomator2 startup timeout used by these runners.
+
 For the new weekly availability feature, see [backend/RECURRING_AVAILABILITY.md](../backend/RECURRING_AVAILABILITY.md). It covers isolated local setup, recurrence API tests, the phone UI test, and hosting rollout. The earlier smoke/functional tests below describe the original launch checks.
 
 ## Read-only student and professor checks
