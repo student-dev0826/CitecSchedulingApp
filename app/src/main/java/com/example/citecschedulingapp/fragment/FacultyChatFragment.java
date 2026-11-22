@@ -131,7 +131,7 @@ public class FacultyChatFragment extends Fragment {
             final String studentId = c.getContactId();
             final String studentName = !c.getContactName().isEmpty() ? c.getContactName() : "Student (" + studentId + ")";
             boolean mine = c.getLastSenderId().equalsIgnoreCase(myId());
-            String snippet = (mine ? "You: " : "") + c.getLastMessage();
+            String snippet = (mine ? "You: " : "") + com.example.citecschedulingapp.ChatReply.body(c.getLastMessage());
 
             containerStudentContacts.addView(ChatContactCard.build(requireContext(),
                     studentName + " (" + studentId + ")", snippet, c.getLastTime(), c.getUnread(), v -> {

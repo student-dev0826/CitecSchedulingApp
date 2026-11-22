@@ -153,7 +153,7 @@ public class ChatFragment extends Fragment {
             ChatConversation c = byId.get(e.id.toLowerCase());
             if (c != null) {
                 boolean mine = c.getLastSenderId().equalsIgnoreCase(myId());
-                e.snippet = (mine ? "You: " : "") + c.getLastMessage();
+                e.snippet = (mine ? "You: " : "") + com.example.citecschedulingapp.ChatReply.body(c.getLastMessage());
                 e.time = c.getLastTime();
                 e.unread = c.getUnread();
                 e.lastId = c.getLastId();

@@ -1,0 +1,36 @@
+<resources>
+    <string name="notification_title">Notifications</string>
+    <string name="notification_subtitle">Your consultation updates</string>
+    <string name="notification_detail_title">Notification details</string>
+    <string name="notification_detail_subtitle">Read the full update below</string>
+    <string name="notification_close">Close notifications</string>
+    <string name="notification_back">Back to notifications</string>
+    <string name="notification_full_message">Full notification</string>
+    <string name="notification_new">New</string>
+    <string name="notification_viewed">Viewed</string>
+    <string name="notification_loading">Loading notifications</string>
+    <string name="notification_loading_hint">Getting your latest consultation updates.</string>
+    <string name="notification_empty">You are all caught up</string>
+    <string name="notification_empty_hint">Appointment and schedule updates will appear here.</string>
+    <string name="notification_error">Could not load notifications</string>
+    <string name="notification_retry">Try again</string>
+    <string name="notification_no_details">No additional details were included in this notification.</string>
+    <string name="notification_open_appointments">Open appointments</string>
+    <string name="notification_open_schedules">Open schedules</string>
+    <string name="notification_summary_slot_requested">A student requested your slot</string>
+    <string name="notification_summary_custom_request">A student sent an appointment request</string>
+    <string name="notification_summary_slot_booked">Your slot was booked by a student</string>
+    <string name="notification_summary_accepted">The professor accepted your appointment</string>
+    <string name="notification_summary_declined">The professor declined your request</string>
+    <string name="notification_summary_cancelled_student">The professor cancelled your appointment</string>
+    <string name="notification_summary_cancelled_faculty">A student cancelled their appointment</string>
+    <string name="notification_summary_withdrawn">A student withdrew their request</string>
+    <string name="notification_summary_transferred_student">Your appointment was transferred</string>
+    <string name="notification_summary_transferred_faculty">An appointment was transferred to you</string>
+    <string name="notification_summary_expired">Your appointment request expired</string>
+    <string name="notification_summary_update">You have a consultation update</string>
+    <plurals name="notification_update_count">
+        <item quantity="one">%d update · Tap to view details</item>
+        <item quantity="other">%d updates · Tap to view details</item>
+    </plurals>
+</resources>

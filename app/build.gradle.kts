@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.citecschedulingapp"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 7
+        versionName = "1.3.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"https://citecscheduling.x10.mx/api/\"")

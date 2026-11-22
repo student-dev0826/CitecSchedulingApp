@@ -16,7 +16,23 @@
                     </LinearLayout>
                     <FrameLayout android:layout_width="48dp" android:layout_height="48dp">
                         <ImageView android:id="@+id/ivNotification" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/brand_yellow" android:padding="12dp" android:src="@drawable/ic_notifications" android:contentDescription="Notifications" app:tint="@color/brand_ink" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="10sp" android:textColor="@color/white" android:background="@drawable/bg_unread_badge" android:visibility="gone" android:gravity="center" android:minWidth="16dp" android:layout_gravity="end|top" android:id="@+id/tvNotifBadge" android:paddingHorizontal="4dp" />
+                        <TextView
+                            android:id="@+id/tvNotifBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="16dp"
+                            android:layout_gravity="end|top"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_unread_badge"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:minWidth="16dp"
+                            android:paddingHorizontal="4dp"
+                            android:singleLine="true"
+                            android:textColor="@color/white"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:visibility="gone" />
                     </FrameLayout>
                 </LinearLayout>
             </LinearLayout>

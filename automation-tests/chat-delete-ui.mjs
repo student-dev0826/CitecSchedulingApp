@@ -36,6 +36,15 @@ async function click(value, using = 'id') {
 async function type(id, text) { const e = await wait(() => find(id)); await api('POST', `/element/${e}/clear`, {}); await api('POST', `/element/${e}/value`, { text }); }
 async function wait(fn) { let err; for (let i = 0; i < 60; i++) { try { return await fn(); } catch (e) { err = e; await pause(500); } } throw err; }
 const source = () => api('GET', '/source');
+async function chooseMessageDelete(text) {
+  const bubble = await find(`//*[@text=${JSON.stringify(text)}]/ancestor::*[@long-clickable="true"][1]`, 'xpath');
+  await api('POST', '/execute/sync', { script: 'mobile: longClickGesture', args: [{ elementId: bubble, duration: 800 }] });
+  await click('btnDeleteMessage');
+}
+async function chooseConversationDelete() {
+  await click('btnRemoveConversation');
+  await click('//*[@text="Delete conversation"]', 'xpath');
+}
 async function capture(name) { writeFileSync(path.join(output, name + '.png'), Buffer.from(await api('GET', '/screenshot'), 'base64')); }
 async function check(name, fn) { console.log('RUN', name); await fn(); results.push(name); console.log('PASS', name); await capture(name); }
 const post = async (file, fields) => (await fetch('http://127.0.0.1:8087/api/' + file, { method: 'POST', body: new URLSearchParams(fields) })).json();
@@ -89,23 +98,23 @@ try {
     const ownText = `${tag}-${role}-own`, incomingText = `${tag}-${role}-incoming`;
     const incomingId = await seed(peer, me, incomingText);
     const ownId = await seed(actor, other, ownText);
-    await check(`${role}-open-conversation`, async () => { await login(faculty); await openChat(faculty, ownText); await wait(() => find(`Remove message ${ownId}`, 'accessibility id')); });
+    await check(`${role}-open-conversation`, async () => { await login(faculty); await openChat(faculty, ownText); await wait(() => find(`//*[@text=${JSON.stringify(ownText)}]`, 'xpath')); });
     await check(`${role}-cancel-keeps-message`, async () => {
-      await click(`Remove message ${ownId}`, 'accessibility id'); await click('android:id/button2');
+      await chooseMessageDelete(ownText); await click('android:id/button2');
       assert.ok((await messages(actor, other)).some(x => +x.message_id === ownId));
     });
     await check(`${role}-remove-message`, async () => {
-      await click(`Remove message ${ownId}`, 'accessibility id'); await click('android:id/button1');
+      await chooseMessageDelete(ownText); await click('android:id/button1');
       await wait(async () => assert.ok(!(await source()).includes(ownText)));
       assert.ok(!(await messages(actor, other)).some(x => +x.message_id === ownId));
       assert.ok((await messages(peer, me)).some(x => +x.message_id === ownId));
     });
     await check(`${role}-cancel-keeps-conversation`, async () => {
-      await click('btnRemoveConversation'); await click('android:id/button2');
+      await chooseConversationDelete(); await click('android:id/button2');
       assert.ok((await messages(actor, other)).some(x => +x.message_id === incomingId));
     });
     await check(`${role}-remove-conversation`, async () => {
-      await click('btnRemoveConversation'); await click('android:id/button1'); await wait(() => find('bottomNavigation'));
+      await chooseConversationDelete(); await click('android:id/button1'); await wait(() => find('bottomNavigation'));
       assert.equal((await messages(actor, other)).length, 0);
       assert.ok((await messages(peer, me)).some(x => +x.message_id === incomingId));
     });

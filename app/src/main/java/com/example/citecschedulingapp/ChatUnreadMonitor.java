@@ -152,8 +152,8 @@ public class ChatUnreadMonitor {
 
         String title = c.getContactName().isEmpty() ? "New message" : c.getContactName();
         String body = c.getUnread() > 1
-                ? c.getUnread() + " new messages: " + c.getLastMessage()
-                : c.getLastMessage();
+                ? c.getUnread() + " new messages: " + ChatReply.body(c.getLastMessage())
+                : ChatReply.body(c.getLastMessage());
 
         NotificationCompat.Builder b = new NotificationCompat.Builder(activity, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_chat)

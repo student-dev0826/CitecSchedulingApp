@@ -1,5 +1,17 @@
 # Android Appium smoke test
 
+## Notification inbox UI checks
+
+`node automation-tests/notification-ui.mjs` tests summary-only notification cards, full original messages and reasons, list/detail navigation, rotation, unknown messages, empty/error/retry states, and the student/professor navigation shortcuts. It serves synthetic notifications on loopback port 18088 with no database connection or hosted API calls. Build/install the automation APK with `-PtestApiBaseUrl=http://127.0.0.1:18088/api/`, forward `adb reverse tcp:18088 tcp:18088`, and run Appium on port 4729 (or set `APPIUM_SERVER`). `ANDROID_SERIAL` defaults to `emulator-5554`.
+
+This is an Android UI change only: summaries are derived from existing notification messages, full text is preserved in the detail view, and the existing mark-read-on-open API behavior is retained. No backend or database migration is needed.
+
+## Message action UI checks
+
+`node automation-tests/chat-actions-ui.mjs` starts a loopback-only in-memory API on port 18087 and tests long-press Reply/Copy/Delete, clipboard paste, reply cancellation and rotation, failed-send draft retention, quoted reply rendering, delete confirmation, and both dashboard badge positions. It uses synthetic accounts and never accesses hosted data. Install the automation debug APK built with `-PtestApiBaseUrl=http://127.0.0.1:18087/api/`, forward `adb reverse tcp:18087 tcp:18087`, and run Appium on port 4727 (or set `APPIUM_SERVER`). `ANDROID_SERIAL` defaults to `emulator-5554`.
+
+Quoted replies use a readable text quote in the existing message payload, so they survive reloads and remain readable on older clients without a server migration. Delete remains private to the current user. The separate `chat-delete-ui.mjs` suite retains the isolated real-backend deletion checks and now follows the long-press and conversation-options menus.
+
 ## Checks without login credentials
 
 With the debug APK installed and Appium running, use `node automation-tests/unauthenticated-ui.mjs`. It checks login role switching, required fields, remember-me interaction, password-recovery navigation and validation, and registration navigation and validation. It submits no accounts or password-reset emails. Set `ANDROID_SERIAL` for the target device (default `emulator-5554`) and optionally `APPIUM_SERVER` (default `http://127.0.0.1:4723`). Start from the login screen without a remembered session. Reports, screenshots and UI hierarchies are saved under `artifacts/`.

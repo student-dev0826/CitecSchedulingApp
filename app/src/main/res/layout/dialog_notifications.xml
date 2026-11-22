@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@drawable/bg_notification_sheet">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingStart="16dp" android:paddingEnd="12dp" android:paddingVertical="20dp"
+        android:background="@drawable/bg_notification_header">
+        <ImageButton android:id="@+id/btnNotificationBack" android:layout_width="48dp"
+            android:layout_height="48dp" android:layout_marginEnd="4dp" android:padding="12dp"
+            android:rotation="180" android:src="@drawable/ic_chevron_right" app:tint="@color/white"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/notification_back" android:visibility="gone" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/tvNotificationsTitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="@string/notification_title"
+                android:textSize="23sp" android:textStyle="bold" android:textColor="@color/white" />
+            <TextView android:id="@+id/tvNotificationsSubtitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="6dp"
+                android:text="@string/notification_subtitle" android:textSize="13sp" android:textColor="@color/brand_yellow" />
+        </LinearLayout>
+        <ImageButton android:id="@+id/btnCloseNotifications" android:layout_width="48dp"
+            android:layout_height="48dp" android:padding="14dp" app:tint="@color/white"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/notification_close" />
+    </LinearLayout>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <LinearLayout android:id="@+id/notificationInbox" android:layout_width="match_parent"
+            android:layout_height="match_parent" android:orientation="vertical">
+            <TextView android:id="@+id/tvNotificationCount" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:paddingHorizontal="20dp"
+                android:paddingTop="16dp" android:paddingBottom="12dp"
+                android:textSize="12sp" android:textStyle="bold" android:textColor="@color/primary" />
+            <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+                <ScrollView android:id="@+id/notificationListScroll" android:layout_width="match_parent"
+                    android:layout_height="match_parent" android:clipToPadding="false" android:paddingHorizontal="16dp"
+                    android:paddingBottom="16dp">
+                    <LinearLayout android:id="@+id/notificationList" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:orientation="vertical" />
+                </ScrollView>
+                <LinearLayout android:id="@+id/notificationState" android:layout_width="match_parent"
+                    android:layout_height="match_parent" android:orientation="vertical" android:gravity="center"
+                    android:padding="28dp">
+                    <ProgressBar android:id="@+id/notificationProgress" android:layout_width="40dp"
+                        android:layout_height="40dp" android:layout_marginBottom="16dp" />
+                    <TextView android:id="@+id/tvNotificationStateTitle" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:gravity="center" android:textSize="18sp"
+                        android:textStyle="bold" android:textColor="@color/primary" />
+                    <TextView android:id="@+id/tvNotificationStateMessage" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:layout_marginTop="10dp" android:gravity="center"
+                        android:textSize="14sp" android:textColor="@color/text_secondary" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnRetryNotifications"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp"
+                        android:layout_marginTop="20dp" android:text="@string/notification_retry"
+                        android:textColor="@color/brand_ink" android:textAllCaps="false" android:letterSpacing="0" app:cornerRadius="12dp" app:backgroundTint="@color/brand_yellow" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/notificationDetail" android:layout_width="match_parent"
+            android:layout_height="match_parent" android:orientation="vertical" android:visibility="gone">
+            <ScrollView android:id="@+id/notificationDetailScroll" android:layout_width="match_parent"
+                android:layout_height="0dp" android:layout_weight="1" android:padding="20dp" android:clipToPadding="false">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+                    <TextView android:id="@+id/tvNotificationDetailSummary" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/primary" />
+                    <TextView android:id="@+id/tvNotificationDetailTime" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:layout_marginTop="12dp" android:textSize="13sp" android:textColor="@color/text_secondary" />
+                    <View android:layout_width="match_parent" android:layout_height="1dp"
+                        android:layout_marginVertical="20dp" android:background="@color/border_color" />
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="@string/notification_full_message" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/primary" />
+                    <TextView android:id="@+id/tvNotificationFullMessage" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:layout_marginTop="10dp" android:lineSpacingExtra="4dp"
+                        android:textSize="16sp" android:textColor="@color/text_primary" android:textIsSelectable="true" />
+                </LinearLayout>
+            </ScrollView>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:paddingHorizontal="20dp" android:paddingBottom="16dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnNotificationOpenAppointments"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="52dp"
+                    android:textColor="@color/brand_ink" android:textAllCaps="false" android:letterSpacing="0" app:cornerRadius="12dp" app:backgroundTint="@color/brand_yellow" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnNotificationReturn"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp"
+                    android:text="@string/notification_back" android:textColor="@color/primary" android:textAllCaps="false" android:letterSpacing="0" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

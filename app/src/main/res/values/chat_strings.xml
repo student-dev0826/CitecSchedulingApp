@@ -1,4 +1,17 @@
 <resources>
+    <string name="chat_message_actions">Message options</string>
+    <string name="chat_message_actions_hint">Touch and hold for Reply, Copy, or Delete</string>
+    <string name="chat_conversation_options">Conversation options</string>
+    <string name="chat_reply">Reply</string>
+    <string name="chat_copy">Copy</string>
+    <string name="chat_delete">Delete</string>
+    <string name="chat_delete_for_me">Delete for me</string>
+    <string name="chat_delete_conversation">Delete conversation</string>
+    <string name="chat_replying_to">Replying to %1$s</string>
+    <string name="chat_cancel_reply">Cancel reply</string>
+    <string name="chat_copied">Message copied</string>
+    <string name="chat_message_too_long">Message is too long. Please shorten it before sending.</string>
+    <string name="chat_send">Send message</string>
     <string name="chat_remove_message">Remove message</string>
     <string name="chat_remove_message_id">Remove message %1$s</string>
     <string name="chat_remove_conversation">Remove conversation</string>

@@ -3,20 +3,50 @@
     <com.google.android.material.card.MaterialCardView android:id="@+id/headerCard" android:layout_width="match_parent" android:layout_height="64dp" android:layout_alignParentTop="true" app:cardBackgroundColor="@color/primary" app:cardCornerRadius="0dp" app:cardElevation="0dp" app:strokeWidth="0dp">
         <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent" android:paddingHorizontal="16dp">
             <ImageView android:id="@+id/ivBack" android:layout_width="32dp" android:layout_height="32dp" android:layout_alignParentStart="true" android:layout_centerVertical="true" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="Back" android:padding="4dp" android:src="@drawable/ic_chevron_right" android:rotation="180" app:tint="@color/white" />
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="12dp" android:layout_toEndOf="@id/ivBack" android:orientation="vertical">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_marginStart="12dp" android:layout_toEndOf="@id/ivBack" android:layout_toStartOf="@id/btnRemoveConversation" android:orientation="vertical">
                 <TextView android:id="@+id/tvChatContactName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Chat Conversation" android:textColor="@color/white" android:textSize="16sp" android:textStyle="bold" />
                 <TextView android:id="@+id/tvChatContactRole" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Online • CITEC Portal" android:textColor="#E0E0E0" android:textSize="12sp" />
             </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRemoveConversation"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="48dp" android:layout_height="48dp"
+                android:layout_alignParentEnd="true" android:layout_centerVertical="true"
+                android:contentDescription="@string/chat_conversation_options"
+                android:padding="12dp" android:insetLeft="0dp" android:insetRight="0dp"
+                app:icon="@drawable/ic_more_vertical" app:iconTint="@color/white"
+                app:iconPadding="0dp" app:iconGravity="textStart" />
         </RelativeLayout>
     </com.google.android.material.card.MaterialCardView>
-    <com.google.android.material.button.MaterialButton android:id="@+id/btnRemoveConversation" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/headerCard" android:text="@string/chat_remove_conversation" android:textAllCaps="false" android:letterSpacing="0" />
     <com.google.android.material.card.MaterialCardView android:id="@+id/inputCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" app:cardBackgroundColor="@color/white" app:cardElevation="0dp" app:strokeWidth="0dp">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <LinearLayout android:id="@+id/replyPreview" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="horizontal"
+                android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="8dp"
+                android:paddingTop="8dp" android:paddingBottom="8dp"
+                android:background="@color/brand_tint" android:visibility="gone">
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/tvReplyAuthor" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="@color/primary" android:maxLines="1" android:ellipsize="end" />
+                    <TextView android:id="@+id/tvReplyExcerpt" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:layout_marginTop="3dp"
+                        android:textSize="13sp" android:textColor="@color/text_secondary"
+                        android:maxLines="2" android:ellipsize="end" />
+                </LinearLayout>
+                <ImageButton android:id="@+id/btnCancelReply" android:layout_width="48dp"
+                    android:layout_height="48dp" android:contentDescription="@string/chat_cancel_reply"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:padding="14dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel" app:tint="@color/primary" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="8dp">
             <com.google.android.material.textfield.TextInputEditText android:id="@+id/etMessageInput" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@null" android:hint="Type a message..." android:inputType="textMultiLine" android:maxLines="4" android:padding="12dp" android:textColor="@color/text_primary" android:textSize="14sp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnSend" style="@style/Widget.MaterialComponents.Button" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="8dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:padding="0dp" app:backgroundTint="@color/brand_yellow" app:cornerRadius="24dp" app:icon="@drawable/ic_send" app:iconGravity="textStart" app:iconPadding="0dp" app:iconTint="@color/brand_ink" android:textAllCaps="false" android:letterSpacing="0" android:textColor="@color/brand_ink" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnSend" style="@style/Widget.MaterialComponents.Button" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="8dp" android:contentDescription="@string/chat_send" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:padding="0dp" app:backgroundTint="@color/brand_yellow" app:cornerRadius="24dp" app:icon="@drawable/ic_send" app:iconGravity="textStart" app:iconPadding="0dp" app:iconTint="@color/brand_ink" android:textAllCaps="false" android:letterSpacing="0" android:textColor="@color/brand_ink" />
+            </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
-    <ScrollView android:id="@+id/scrollView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/inputCard" android:layout_below="@id/btnRemoveConversation" android:fillViewport="true" android:padding="16dp">
+    <ScrollView android:id="@+id/scrollView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/inputCard" android:layout_below="@id/headerCard" android:fillViewport="true" android:padding="16dp">
         <LinearLayout android:id="@+id/containerMessages" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
     </ScrollView>
 </RelativeLayout>

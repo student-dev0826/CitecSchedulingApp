@@ -3,13 +3,19 @@ package com.example.citecschedulingapp;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -17,8 +23,10 @@ import com.example.citecschedulingapp.model.ChatMessage;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 public class ChatDetailActivity extends AppCompatActivity {
 
@@ -49,6 +57,11 @@ public class ChatDetailActivity extends AppCompatActivity {
     private int readGeneration;
     private long lastDisplayedId;
     private MaterialButton removeConversation;
+    private View replyPreview;
+    private TextView tvReplyAuthor, tvReplyExcerpt;
+    private ImageButton btnCancelReply;
+    private String replyMessageId, replyAuthor, replyExcerpt;
+    private BottomSheetDialog messageActions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +82,12 @@ public class ChatDetailActivity extends AppCompatActivity {
         ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
                 .cancel(ChatUnreadMonitor.notificationId(recipientId));
         initViews();
+        if (savedInstanceState != null) {
+            replyMessageId = savedInstanceState.getString("replyMessageId");
+            replyAuthor = savedInstanceState.getString("replyAuthor");
+            replyExcerpt = savedInstanceState.getString("replyExcerpt");
+            updateReplyPreview();
+        }
         setupListeners();
         setupPolling();
     }
@@ -98,7 +117,17 @@ public class ChatDetailActivity extends AppCompatActivity {
         btnSend = findViewById(R.id.btnSend);
         removeConversation = findViewById(R.id.btnRemoveConversation);
         removeConversation.setEnabled(false);
-        removeConversation.setOnClickListener(v -> confirmRemoval(null));
+        removeConversation.setOnClickListener(v -> {
+            androidx.appcompat.widget.PopupMenu menu = new androidx.appcompat.widget.PopupMenu(this, v);
+            menu.getMenu().add(R.string.chat_delete_conversation);
+            menu.setOnMenuItemClickListener(item -> { confirmRemoval(null); return true; });
+            menu.show();
+        });
+        replyPreview = findViewById(R.id.replyPreview);
+        tvReplyAuthor = findViewById(R.id.tvReplyAuthor);
+        tvReplyExcerpt = findViewById(R.id.tvReplyExcerpt);
+        btnCancelReply = findViewById(R.id.btnCancelReply);
+        btnCancelReply.setOnClickListener(v -> clearReply());
 
         if (tvChatContactName != null) {
             tvChatContactName.setText(recipientName);
@@ -143,6 +172,70 @@ public class ChatDetailActivity extends AppCompatActivity {
         if (pollHandler != null && pollRunnable != null) {
             pollHandler.removeCallbacks(pollRunnable);
         }
+        if (messageActions != null) messageActions.dismiss();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("replyMessageId", replyMessageId);
+        outState.putString("replyAuthor", replyAuthor);
+        outState.putString("replyExcerpt", replyExcerpt);
+    }
+
+    private void showMessageActions(ChatMessage message) {
+        if (sending || deleting || isFinishing()) return;
+        if (messageActions != null) messageActions.dismiss();
+        InputMethodManager keyboard = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        keyboard.hideSoftInputFromWindow(etMessageInput.getWindowToken(), 0);
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View actions = getLayoutInflater().inflate(R.layout.dialog_chat_message_actions, null);
+        ((TextView) actions.findViewById(R.id.tvSelectedMessage)).setText(messageBody(message));
+        actions.findViewById(R.id.btnReplyMessage).setOnClickListener(v -> {
+            dialog.dismiss();
+            replyMessageId = message.getMessageId();
+            replyAuthor = TextUtils.isEmpty(message.getSenderName())
+                    ? (message.getSenderId().equalsIgnoreCase(currentUserId) ? currentUserName : recipientName)
+                    : message.getSenderName();
+            replyExcerpt = ChatReply.excerpt(message.getMessageText());
+            updateReplyPreview();
+            etMessageInput.requestFocus();
+            etMessageInput.postDelayed(() -> {
+                if (!isFinishing() && !isDestroyed()) keyboard.showSoftInput(etMessageInput, InputMethodManager.SHOW_IMPLICIT);
+            }, 150);
+        });
+        actions.findViewById(R.id.btnCopyMessage).setOnClickListener(v -> {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            clipboard.setPrimaryClip(ClipData.newPlainText("Message", messageBody(message)));
+            if (android.os.Build.VERSION.SDK_INT < 33) Toast.makeText(this, R.string.chat_copied, Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+        actions.findViewById(R.id.btnDeleteMessage).setOnClickListener(v -> {
+            dialog.dismiss();
+            confirmRemoval(message.getMessageId());
+        });
+        dialog.setContentView(actions);
+        dialog.setOnDismissListener(d -> { if (messageActions == dialog) messageActions = null; });
+        messageActions = dialog;
+        dialog.show();
+    }
+
+    private String messageBody(ChatMessage message) {
+        ChatReply reply = ChatReply.parse(message.getMessageText());
+        return reply == null ? message.getMessageText() : reply.body;
+    }
+
+    private void updateReplyPreview() {
+        replyPreview.setVisibility(replyAuthor == null ? View.GONE : View.VISIBLE);
+        if (replyAuthor != null) {
+            tvReplyAuthor.setText(getString(R.string.chat_replying_to, replyAuthor));
+            tvReplyExcerpt.setText(replyExcerpt);
+        }
+    }
+
+    private void clearReply() {
+        replyMessageId = replyAuthor = replyExcerpt = null;
+        updateReplyPreview();
     }
 
     private void attemptSendMessage() {
@@ -152,25 +245,38 @@ public class ChatDetailActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(text)) {
             return;
         }
+        final String outgoing = replyAuthor == null ? text : ChatReply.encode(replyAuthor, replyExcerpt, text);
+        // The existing server can truncate long payloads; reject rather than lose text.
+        if (outgoing.getBytes(StandardCharsets.UTF_8).length > 2000) {
+            etMessageInput.setError(getString(R.string.chat_message_too_long));
+            return;
+        }
 
         sending = true;
         btnSend.setEnabled(false);
+        etMessageInput.setEnabled(false);
+        btnCancelReply.setEnabled(false);
         chatRepository.sendMessage(currentUserId, currentUserName, currentUserRole,
-                recipientId, recipientName, text, new ChatRepository.Result<Object>() {
+                recipientId, recipientName, outgoing, new ChatRepository.Result<Object>() {
                     @Override
                     public void onSuccess(Object data) {
                         sending = false;
                         if (isFinishing() || isDestroyed()) return;
                         btnSend.setEnabled(true);
+                        etMessageInput.setEnabled(true);
+                        btnCancelReply.setEnabled(true);
                         etMessageInput.setText("");
+                        clearReply();
                         loadMessages();
                     }
 
                     @Override
                     public void onError(String message) {
                         sending = false;
-                        if (isFinishing()) return;
+                        if (isFinishing() || isDestroyed()) return;
                         btnSend.setEnabled(true);
+                        etMessageInput.setEnabled(true);
+                        btnCancelReply.setEnabled(true);
                         android.widget.Toast.makeText(ChatDetailActivity.this, message, android.widget.Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -272,10 +378,10 @@ public class ChatDetailActivity extends AppCompatActivity {
         if (deleting || sending || (messageId == null && lastDisplayedId == 0)) return;
         final long throughId = lastDisplayedId;
         new androidx.appcompat.app.AlertDialog.Builder(this, R.style.WeeklyAvailabilityDialog)
-                .setTitle(messageId == null ? R.string.chat_remove_conversation : R.string.chat_remove_message)
+                .setTitle(messageId == null ? R.string.chat_delete_conversation : R.string.chat_delete)
                 .setMessage(messageId == null ? R.string.chat_remove_conversation_confirm : R.string.chat_remove_message_confirm)
                 .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.chat_remove_for_me, (dialog, which) -> remove(messageId, throughId))
+                .setPositiveButton(R.string.chat_delete_for_me, (dialog, which) -> remove(messageId, throughId))
                 .show();
     }
 
@@ -291,6 +397,7 @@ public class ChatDetailActivity extends AppCompatActivity {
                 deleting = false;
                 if (isFinishing() || isDestroyed()) return;
                 btnSend.setEnabled(true);
+                if (messageId != null && messageId.equals(replyMessageId)) clearReply();
                 ((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE))
                         .cancel(ChatUnreadMonitor.notificationId(recipientId));
                 if (messageId == null) finish();
@@ -324,7 +431,7 @@ public class ChatDetailActivity extends AppCompatActivity {
         );
         cardParams.gravity = isSentByMe ? Gravity.END : Gravity.START;
         card.setLayoutParams(cardParams);
-        card.setRadius(16f);
+        card.setRadius(UiUtil.dp(this, 14));
         card.setCardElevation(2f);
 
         if (isSentByMe) {
@@ -337,10 +444,45 @@ public class ChatDetailActivity extends AppCompatActivity {
 
         LinearLayout cardContent = new LinearLayout(this);
         cardContent.setOrientation(LinearLayout.VERTICAL);
-        cardContent.setPadding(24, 16, 24, 16);
+        int bubblePadding = UiUtil.dp(this, 12);
+        cardContent.setPadding(bubblePadding, bubblePadding, bubblePadding, UiUtil.dp(this, 8));
+        int textWidth = (int) (getResources().getDisplayMetrics().widthPixels * .75f) - bubblePadding * 2;
+        ChatReply quotedReply = ChatReply.parse(message.getMessageText());
+        if (quotedReply != null) {
+            LinearLayout quote = new LinearLayout(this);
+            quote.setOrientation(LinearLayout.VERTICAL);
+            int padding = UiUtil.dp(this, 10);
+            quote.setPadding(padding, padding, padding, padding);
+            GradientDrawable background = new GradientDrawable();
+            background.setColor(getColor(R.color.brand_tint));
+            background.setCornerRadius(UiUtil.dp(this, 8));
+            quote.setBackground(background);
+            TextView author = new TextView(this);
+            author.setText(quotedReply.author);
+            author.setTextColor(getColor(R.color.primary));
+            author.setTextSize(12);
+            author.setTypeface(null, android.graphics.Typeface.BOLD);
+            author.setMaxWidth(textWidth - padding * 2);
+            author.setMaxLines(1);
+            author.setEllipsize(TextUtils.TruncateAt.END);
+            TextView excerpt = new TextView(this);
+            excerpt.setText(quotedReply.excerpt);
+            excerpt.setTextColor(getColor(R.color.text_secondary));
+            excerpt.setTextSize(13);
+            excerpt.setMaxWidth(textWidth - padding * 2);
+            excerpt.setMaxLines(2);
+            excerpt.setEllipsize(TextUtils.TruncateAt.END);
+            quote.addView(author);
+            quote.addView(excerpt);
+            LinearLayout.LayoutParams quoteParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            quoteParams.bottomMargin = UiUtil.dp(this, 8);
+            cardContent.addView(quote, quoteParams);
+        }
 
         TextView tvText = new TextView(this);
-        tvText.setText(message.getMessageText());
+        tvText.setText(messageBody(message));
+        tvText.setMaxWidth(textWidth);
         tvText.setTextSize(14f);
         tvText.setTextColor(isSentByMe ? getResources().getColor(R.color.white) : getResources().getColor(R.color.text_primary));
 
@@ -356,15 +498,12 @@ public class ChatDetailActivity extends AppCompatActivity {
         card.addView(cardContent);
 
         row.addView(card);
-        MaterialButton remove = UiUtil.outlinedButton(this, getString(R.string.chat_remove_message), getColor(R.color.text_secondary));
-        remove.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        remove.setText(R.string.chat_remove_message);
-        remove.setAllCaps(false);
-        remove.setContentDescription(getString(R.string.chat_remove_message_id, message.getMessageId()));
-        remove.setOnClickListener(v -> confirmRemoval(message.getMessageId()));
-        row.addView(remove);
-        card.setOnLongClickListener(v -> { confirmRemoval(message.getMessageId()); return true; });
+        card.setFocusable(true);
+        card.setOnLongClickListener(v -> { showMessageActions(message); return true; });
+        androidx.appcompat.widget.TooltipCompat.setTooltipText(card, getString(R.string.chat_message_actions_hint));
+        androidx.core.view.ViewCompat.replaceAccessibilityAction(card,
+                androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_LONG_CLICK,
+                getString(R.string.chat_message_actions), (view, arguments) -> { showMessageActions(message); return true; });
         return row;
     }
 }
